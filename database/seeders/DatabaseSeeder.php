@@ -136,6 +136,25 @@ class DatabaseSeeder extends Seeder
             'title' => ['en' => 'DIT ICB profile content added to the new website', 'sw' => 'Wasifu wa DIT ICB umeongezwa kwenye tovuti mpya'],
             'excerpt' => ['en' => 'The website now includes the bureau profile, services, staff, and selected projects from the institutional profile document.', 'sw' => 'Tovuti sasa ina wasifu wa bureau, huduma, watumishi na miradi iliyochaguliwa kutoka kwenye nyaraka ya taasisi.'],
             'body' => ['en' => '<p>The initial CMS content is based on the DIT ICB company profile document and can be updated by administrators from the admin panel.</p>', 'sw' => '<p>Maudhui ya awali ya CMS yametokana na nyaraka ya wasifu wa DIT ICB na yanaweza kuhaririwa na wasimamizi kupitia admin panel.</p>'],
+            'image_path' => 'demo/news/project-briefing.svg',
+            'published_at' => now()->subDays(2),
+            'is_published' => true,
+        ]);
+
+        NewsPost::updateOrCreate(['slug' => 'technical-training-workshop'], [
+            'title' => ['en' => 'Event: Technical training workshop for project teams', 'sw' => 'Tukio: Warsha ya mafunzo ya kiufundi kwa timu za miradi'],
+            'excerpt' => ['en' => 'DIT ICB will host a practical workshop focused on project supervision, site reporting, and quality assurance for technical teams.', 'sw' => 'DIT ICB itaendesha warsha ya vitendo kuhusu usimamizi wa miradi, taarifa za site na uhakiki wa ubora kwa timu za kiufundi.'],
+            'body' => ['en' => '<p>The workshop brings together engineers, technicians, and project coordinators for practical sessions on supervision workflows, technical documentation, and quality control practices.</p>', 'sw' => '<p>Warsha hii inawakutanisha wahandisi, mafundi na waratibu wa miradi kwa vipindi vya vitendo kuhusu usimamizi, nyaraka za kiufundi na uhakiki wa ubora.</p>'],
+            'image_path' => 'demo/news/training-workshop.svg',
+            'published_at' => now()->subDay(),
+            'is_published' => true,
+        ]);
+
+        NewsPost::updateOrCreate(['slug' => 'stakeholder-consultancy-forum'], [
+            'title' => ['en' => 'Event: Stakeholder forum on consultancy delivery', 'sw' => 'Tukio: Jukwaa la wadau kuhusu huduma za ushauri'],
+            'excerpt' => ['en' => 'The bureau is convening public and private sector partners to discuss engineering consultancy needs and collaborative delivery models.', 'sw' => 'Bureau inawakutanisha wadau wa sekta ya umma na binafsi kujadili mahitaji ya ushauri wa kihandisi na mifumo ya ushirikiano.'],
+            'body' => ['en' => '<p>The forum will highlight client priorities, lessons from recent assignments, and opportunities for stronger collaboration between DIT experts and industry partners.</p>', 'sw' => '<p>Jukwaa litaangazia vipaumbele vya wateja, mafunzo kutoka kazi zilizotekelezwa na fursa za kuongeza ushirikiano kati ya wataalamu wa DIT na wadau wa sekta.</p>'],
+            'image_path' => 'demo/news/stakeholder-forum.svg',
             'published_at' => now(),
             'is_published' => true,
         ]);

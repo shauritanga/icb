@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Stakeholder forum</title>
+  <desc id="desc">A forum setting with audience seats, podium, and presentation board.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#071d35"/>
+      <stop offset=".62" stop-color="#073b73"/>
+      <stop offset="1" stop-color="#0f5ea8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect x="94" y="92" width="1012" height="546" rx="32" fill="#ffffff" opacity=".1"/>
+  <rect x="170" y="142" width="430" height="268" rx="20" fill="#eaf4ff"/>
+  <path d="M223 211h316M223 262h238M223 314h286" stroke="#0d2545" stroke-width="18" stroke-linecap="round" opacity=".28"/>
+  <rect x="704" y="160" width="230" height="322" rx="18" fill="#f8c12c"/>
+  <rect x="744" y="212" width="150" height="22" rx="11" fill="#0d2545" opacity=".45"/>
+  <rect x="744" y="258" width="112" height="22" rx="11" fill="#0d2545" opacity=".45"/>
+  <rect x="744" y="304" width="150" height="22" rx="11" fill="#0d2545" opacity=".45"/>
+  <rect x="672" y="480" width="294" height="74" rx="16" fill="#ffffff"/>
+  <path d="M122 608c87-86 206-86 293 0M335 608c87-86 206-86 293 0M548 608c87-86 206-86 293 0M761 608c87-86 206-86 293 0" fill="none" stroke="#eaf4ff" stroke-width="24" stroke-linecap="round" opacity=".85"/>
+  <circle cx="268" cy="544" r="38" fill="#f8c12c"/>
+  <circle cx="481" cy="544" r="38" fill="#f8c12c"/>
+  <circle cx="694" cy="544" r="38" fill="#f8c12c"/>
+  <circle cx="907" cy="544" r="38" fill="#f8c12c"/>
+  <path d="M40 703c226-60 421-66 585-18 174 51 352 34 535-56v131H40z" fill="#071d35" opacity=".52"/>
+</svg>

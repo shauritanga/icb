@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Technical training workshop</title>
+  <desc id="desc">A training room with presentation screen, attendees, and engineering learning materials.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5fb"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect x="106" y="92" width="988" height="576" rx="32" fill="#073b73"/>
+  <rect x="162" y="146" width="520" height="296" rx="18" fill="#f8fafc"/>
+  <path d="M217 371h406M217 325h318M217 279h218" stroke="#0f5ea8" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="614" cy="202" r="28" fill="#f8c12c"/>
+  <rect x="738" y="154" width="266" height="84" rx="16" fill="#f8c12c"/>
+  <path d="M780 186h142M780 210h184" stroke="#0d2545" stroke-width="12" stroke-linecap="round" opacity=".5"/>
+  <rect x="739" y="284" width="266" height="270" rx="18" fill="#0d2545"/>
+  <path d="M779 344h184M779 389h142M779 434h202M779 479h118" stroke="#eaf4ff" stroke-width="15" stroke-linecap="round" opacity=".78"/>
+  <circle cx="260" cy="573" r="62" fill="#eaf4ff"/>
+  <circle cx="422" cy="573" r="62" fill="#eaf4ff"/>
+  <circle cx="584" cy="573" r="62" fill="#eaf4ff"/>
+  <path d="M207 654c28-48 78-73 126-73s98 25 126 73M369 654c28-48 78-73 126-73s98 25 126 73M531 654c28-48 78-73 126-73s98 25 126 73" fill="none" stroke="#f8c12c" stroke-width="18" stroke-linecap="round"/>
+  <path d="M0 702c161-44 331-48 510-12 230 47 459 22 690-58v128H0z" fill="#0d2545" opacity=".12"/>
+</svg>

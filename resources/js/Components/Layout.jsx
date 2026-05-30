@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Mail, Menu, Phone, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -15,6 +15,13 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const mainRef = useRef(null);
+    const { url } = usePage();
+    const currentPath = (url || '/').split('?')[0].replace(/\/$/, '') || '/';
+
+    const isActive = (href) => {
+        const path = href.replace(/\/$/, '') || '/';
+        return currentPath === path || (path !== '/' && currentPath.startsWith(`${path}/`));
+    };
 
     const langHref = (lang) => {
         const url = new URL(window.location.href);
@@ -71,9 +78,20 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-[18px] text-[#233244] font-semibold text-[0.94rem]">
-                        {nav.map(([label, href]) => (
-                            <Link key={href} href={href} className="desktop-nav-link relative whitespace-nowrap transition-colors duration-[180ms] hover:text-navy-600">{label}</Link>
-                        ))}
+                        {nav.map(([label, href]) => {
+                            const active = isActive(href);
+
+                            return (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    className={`desktop-nav-link relative whitespace-nowrap transition-colors duration-[180ms] hover:text-navy-600 ${active ? 'text-navy-600 after:!w-full' : ''}`}
+                                    aria-current={active ? 'page' : undefined}
+                                >
+                                    {label}
+                                </Link>
+                            );
+                        })}
                         <a
                             className="px-[14px] py-2.5 bg-gold-400 text-navy-900 rounded-md font-extrabold transition-[background,transform] duration-[180ms] hover:bg-gold-500 hover:-translate-y-px"
                             href="/admin" target="_blank" rel="noreferrer"
@@ -92,9 +110,21 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
 
                 {/* Mobile nav */}
                 <nav className={`mobile-nav${open ? ' open' : ''}`}>
-                    {nav.map(([label, href]) => (
-                        <Link key={href} href={href} onClick={() => setOpen(false)} className="px-3 py-3 rounded-md font-semibold hover:bg-blue-50 transition-colors">{label}</Link>
-                    ))}
+                    {nav.map(([label, href]) => {
+                        const active = isActive(href);
+
+                        return (
+                            <Link
+                                key={href}
+                                href={href}
+                                onClick={() => setOpen(false)}
+                                className={`px-3 py-3 rounded-md font-semibold transition-colors ${active ? 'bg-brand-sky text-navy-700' : 'hover:bg-blue-50'}`}
+                                aria-current={active ? 'page' : undefined}
+                            >
+                                {label}
+                            </Link>
+                        );
+                    })}
                     <a href="/admin" target="_blank" rel="noreferrer" className="px-3 py-3 rounded-md font-semibold hover:bg-blue-50 transition-colors">Admin</a>
                 </nav>
             </header>

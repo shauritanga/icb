@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Award, ClipboardCheck, DraftingCompass, UsersRound } from 'lucide-react';
+import { ArrowRight, Award, CalendarDays, ClipboardCheck, DraftingCompass, Newspaper, UsersRound } from 'lucide-react';
 import { CircularTestimonials } from '@/Components/ui/circular-testimonials';
 import Layout from '../Components/Layout';
 import { ImageBlock, SectionHead } from '../Components/UI';
@@ -30,7 +30,7 @@ function leadershipQuote(member) {
     return `${member.name} contributes professional leadership to the bureau's consultancy, training, and project advisory services.`;
 }
 
-export default function Home({ services = [], projects = [], staff = [], settings = {}, locale = 'en' }) {
+export default function Home({ services = [], projects = [], staff = [], news = [], settings = {}, locale = 'en' }) {
     const leadershipTestimonials = staff.map((member, index) => ({
         quote: leadershipQuote(member),
         name: member.name,
@@ -106,6 +106,98 @@ export default function Home({ services = [], projects = [], staff = [], setting
                             </div>
                         </Link>
                     ))}
+                </div>
+            </section>
+
+            {/* News & Events */}
+            <section className="py-[clamp(54px,7vw,88px)] bg-white">
+                <SectionHead eyebrow="News & Events" title="Latest bureau updates" href="/news" action="View all updates" />
+                <div className="max-w-[1180px] mx-auto px-4">
+                    {news.length > 0 ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-[18px] items-stretch">
+                            <Link
+                                className="group reveal relative overflow-hidden rounded-lg border border-border-light bg-navy-900 p-[clamp(22px,4vw,34px)] text-white shadow-card transition-[box-shadow,transform] duration-[220ms] hover:-translate-y-1 hover:shadow-card-lg"
+                                href={news[0].url}
+                            >
+                                {news[0].image && (
+                                    <img
+                                        className="absolute inset-0 h-full w-full object-cover opacity-28 transition-transform duration-500 group-hover:scale-105"
+                                        src={news[0].image}
+                                        alt=""
+                                    />
+                                )}
+                                <div className="absolute inset-0 bg-hero-mesh opacity-80" />
+                                <div className="relative z-10 flex min-h-[310px] flex-col justify-between">
+                                    <div>
+                                        <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-md bg-gold-400 text-navy-900">
+                                            <Newspaper size={23} />
+                                        </span>
+                                        <div className="mb-3 inline-flex items-center gap-2 text-sm font-bold text-blue-100">
+                                            <CalendarDays size={16} />
+                                            {news[0].published_at || 'Latest update'}
+                                        </div>
+                                        <h3 className="max-w-[680px] text-[clamp(1.6rem,3vw,2.35rem)] font-extrabold leading-[1.05] text-white">{news[0].title}</h3>
+                                        {news[0].excerpt && <p className="mt-4 max-w-[620px] text-blue-100 leading-[1.75]">{news[0].excerpt}</p>}
+                                    </div>
+                                    <span className="mt-8 inline-flex items-center gap-2 font-extrabold text-gold-400 transition-[gap] duration-200 group-hover:gap-3">
+                                        Read update <ArrowRight size={18} />
+                                    </span>
+                                </div>
+                            </Link>
+
+                            <div className="grid gap-[18px]">
+                                {news.slice(1, 3).map((post, i) => (
+                                    <Link
+                                        className="group reveal grid min-h-[168px] grid-cols-[112px_1fr] overflow-hidden rounded-lg border border-border-light bg-white shadow-card transition-[box-shadow,transform] duration-[220ms] hover:-translate-y-1 hover:shadow-card-lg max-sm:grid-cols-1"
+                                        href={post.url}
+                                        key={post.slug}
+                                        style={{ transitionDelay: `${(i + 1) * 0.08}s` }}
+                                    >
+                                        <div className="min-h-[168px] bg-brand-muted max-sm:min-h-[160px]">
+                                            {post.image ? (
+                                                <img className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" src={post.image} alt="" />
+                                            ) : (
+                                                <div className="grid h-full place-items-center text-navy-600">
+                                                    <Newspaper size={24} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col justify-between p-6">
+                                            <div>
+                                                <span className="mb-3 inline-flex items-center gap-2 text-[#bb7d00] text-[0.78rem] font-extrabold uppercase tracking-[0.08em]">
+                                                    <CalendarDays size={14} />
+                                                    {post.published_at || 'Update'}
+                                                </span>
+                                                <h3 className="text-[1.12rem] font-extrabold leading-[1.22] text-navy-800">{post.title}</h3>
+                                                {post.excerpt && <p className="mt-2 line-clamp-2 text-sm leading-[1.65] text-slate-500">{post.excerpt}</p>}
+                                            </div>
+                                            <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-extrabold text-navy-600 transition-[gap,color] duration-200 group-hover:gap-2.5 group-hover:text-navy-700">
+                                                Details <ArrowRight size={15} />
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                                {news.length === 1 && (
+                                    <div className="reveal grid min-h-[146px] place-items-center rounded-lg border border-dashed border-border-light bg-brand-muted p-6 text-center">
+                                        <div>
+                                            <Newspaper className="mx-auto mb-3 text-navy-600" size={24} />
+                                            <p className="font-bold text-navy-800">More bureau updates will appear here as they are published.</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="reveal grid min-h-[220px] place-items-center rounded-lg border border-dashed border-border-light bg-brand-muted p-8 text-center">
+                            <div className="max-w-[520px]">
+                                <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-white text-navy-600 shadow-card">
+                                    <Newspaper size={23} />
+                                </span>
+                                <h3 className="text-[1.2rem] font-extrabold text-navy-800">No updates published yet</h3>
+                                <p className="mt-2 text-slate-500 leading-[1.65]">News, announcements, and event notices will appear here once they are published by the bureau.</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </section>
 

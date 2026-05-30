@@ -215,6 +215,7 @@ class SiteController extends Controller
             'title' => $post->localized('title'),
             'excerpt' => $post->localized('excerpt'),
             'published_at' => $post->published_at?->format('M d, Y'),
+            'image' => $this->imageUrl($post->image_path),
             'url' => route('news.show', $post->slug),
         ];
     }
@@ -235,5 +236,22 @@ class SiteController extends Controller
             'caption' => $item->localized('caption'),
             'image' => $item->image_path ? asset('storage/'.$item->image_path) : null,
         ];
+    }
+
+    private function imageUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'demo/')) {
+            return asset($path);
+        }
+
+        return asset('storage/'.$path);
     }
 }
