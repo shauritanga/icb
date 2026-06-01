@@ -41,7 +41,7 @@ export default function Home({ services = [], projects = [], staff = [], news = 
     return (
         <Layout settings={settings} locale={locale}>
             {/* Hero */}
-            <section className="bg-navy-700 bg-hero-mesh text-white py-[clamp(56px,8vw,96px)]">
+            <section className="bg-navy-700 bg-engineering-structure text-white py-[clamp(56px,8vw,96px)]">
                 <div className="max-w-[1180px] mx-auto px-4 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-[clamp(28px,5vw,64px)] items-center">
                     <div className="hero-copy">
                         <span className={eyebrowLight}>Professional Consulting and Training Bureau</span>

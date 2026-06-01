@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 
 export function PageHero({ eyebrow, title, children }) {
     return (
-        <section className="bg-navy-700 bg-grid-pattern text-white py-[clamp(52px,8vw,86px)]">
+        <section className="bg-navy-700 bg-engineering-structure text-white py-[clamp(52px,8vw,86px)]">
             <div className="max-w-[1180px] mx-auto px-4">
                 {eyebrow && <span className="inline-block text-gold-400 font-extrabold uppercase text-[0.78rem] tracking-[0.08em]">{eyebrow}</span>}
                 <h1 className="max-w-[840px] mt-3 mb-4 text-[clamp(2rem,4vw,3.8rem)] leading-[1.05] font-extrabold">{title}</h1>

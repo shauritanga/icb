@@ -5,7 +5,7 @@ import Layout from '../Components/Layout';
 export default function Post({ post, settings = {}, locale = 'en' }) {
     return (
         <Layout settings={settings} locale={locale}>
-            <section className="bg-navy-700 bg-grid-pattern text-white py-[clamp(52px,8vw,86px)]">
+            <section className="bg-navy-700 bg-engineering-structure text-white py-[clamp(52px,8vw,86px)]">
                 <div className="max-w-[1180px] mx-auto px-4">
                     <nav className="mb-8 flex items-center gap-2 overflow-hidden text-sm text-blue-100" aria-label="Breadcrumb">
                         <Link className="inline-flex items-center gap-1.5 font-bold text-gold-400 transition-colors hover:text-white" href="/">
