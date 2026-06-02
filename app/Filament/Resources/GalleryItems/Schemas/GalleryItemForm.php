@@ -25,7 +25,12 @@ class GalleryItemForm
                         TextInput::make('sort_order')->numeric()->default(0),
                         Toggle::make('is_published')->default(true),
                     ]),
-                    FileUpload::make('image_path')->required()->image()->directory('gallery'),
+                    FileUpload::make('image_path')
+                        ->required()
+                        ->image()
+                        ->disk('public')
+                        ->directory('gallery')
+                        ->maxSize(5120),
                 ]),
             ]);
     }

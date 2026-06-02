@@ -1,6 +1,29 @@
-import { DraftingCompass } from 'lucide-react';
+import {
+    Building2,
+    ClipboardList,
+    DraftingCompass,
+    HardHat,
+    Monitor,
+    Settings2,
+    Zap,
+} from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero } from '../Components/UI';
+
+const ICON_MAP = {
+    Building2,
+    ClipboardList,
+    DraftingCompass,
+    HardHat,
+    Monitor,
+    Settings2,
+    Zap,
+};
+
+function ServiceIcon({ name, size = 22 }) {
+    const Icon = ICON_MAP[name] ?? DraftingCompass;
+    return <Icon size={size} />;
+}
 
 export default function Services({ services = [], settings = {}, locale = 'en' }) {
     const plainText = (html = '') => html.replace(/<[^>]*>/g, '').trim();
@@ -19,7 +42,7 @@ export default function Services({ services = [], settings = {}, locale = 'en' }
                             style={{ transitionDelay: `${i * 0.08}s` }}
                         >
                             <span className="w-[46px] h-[46px] grid place-items-center bg-brand-sky text-navy-600 rounded-md mb-4">
-                                <DraftingCompass size={22} />
+                                <ServiceIcon name={service.icon} />
                             </span>
                             <h2 className="mb-2.5 text-navy-800 font-extrabold text-[1.15rem] leading-[1.2]">{service.title}</h2>
                             <p className="text-slate-500 leading-[1.65] mb-3">{service.summary}</p>

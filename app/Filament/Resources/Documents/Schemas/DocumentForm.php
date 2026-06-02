@@ -25,7 +25,18 @@ class DocumentForm
                         TextInput::make('sort_order')->numeric()->default(0),
                         Toggle::make('is_published')->default(true),
                     ]),
-                    FileUpload::make('file_path')->required()->directory('documents'),
+                    FileUpload::make('file_path')
+                        ->required()
+                        ->disk('public')
+                        ->directory('documents')
+                        ->acceptedFileTypes([
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        ])
+                        ->maxSize(10240),
                 ]),
             ]);
     }

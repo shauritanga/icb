@@ -26,7 +26,11 @@ class StaffMemberForm
                         TextInput::make('sort_order')->numeric()->default(0),
                         Toggle::make('is_published')->default(true),
                     ]),
-                    FileUpload::make('photo_path')->image()->directory('staff'),
+                    FileUpload::make('photo_path')
+                        ->image()
+                        ->disk('public')
+                        ->directory('staff')
+                        ->maxSize(5120),
                 ]),
             ]);
     }

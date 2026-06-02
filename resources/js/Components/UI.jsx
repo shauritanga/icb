@@ -42,6 +42,13 @@ export function ImageBlock({ src, label }) {
 
 export function Pagination({ links = [] }) {
     if (!links.length) return null;
+
+    const pageLabel = (label) => label
+        .replace(/&laquo;/g, '<<')
+        .replace(/&raquo;/g, '>>')
+        .replace(/<[^>]*>/g, '')
+        .trim();
+
     return (
         <div className="flex flex-wrap gap-2 mt-7">
             {links.map((link, index) => (
@@ -50,13 +57,15 @@ export function Pagination({ links = [] }) {
                         key={index}
                         className={`min-w-[38px] min-h-[38px] inline-grid place-items-center px-[11px] py-2 border rounded-md transition-[background,color,border-color] duration-150 ${link.active ? 'bg-navy-600 text-white border-navy-600' : 'bg-white border-slate-300 hover:bg-brand-sky hover:text-navy-600 hover:border-sky-200'}`}
                         href={link.url}
-                        dangerouslySetInnerHTML={{ __html: link.label }}
-                      />
+                      >
+                        {pageLabel(link.label)}
+                    </Link>
                     : <span
                         key={index}
                         className="min-w-[38px] min-h-[38px] inline-grid place-items-center px-[11px] py-2 border border-slate-200 bg-white rounded-md text-slate-400"
-                        dangerouslySetInnerHTML={{ __html: link.label }}
-                      />
+                      >
+                        {pageLabel(link.label)}
+                    </span>
             ))}
         </div>
     );

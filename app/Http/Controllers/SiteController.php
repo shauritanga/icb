@@ -169,12 +169,17 @@ class SiteController extends Controller
             'title' => $service->localized('title'),
             'summary' => $service->localized('summary'),
             'body' => $service->localized('body'),
-            'image' => $service->image_path ? asset('storage/'.$service->image_path) : null,
+            'image' => $this->imageUrl($service->image_path),
+            'icon' => $service->icon,
         ];
     }
 
     private function projectData(Project $project): array
     {
+        $main = $this->imageUrl($project->image_path);
+        $extras = array_map(fn ($p) => $this->imageUrl($p), $project->gallery_images ?? []);
+        $images = array_values(array_filter([$main, ...$extras]));
+
         return [
             'slug' => $project->slug,
             'title' => $project->localized('title'),
@@ -184,7 +189,8 @@ class SiteController extends Controller
             'contract_value' => $project->contract_value,
             'project_period' => $project->project_period,
             'status' => $project->status,
-            'image' => $project->image_path ? asset('storage/'.$project->image_path) : null,
+            'image' => $main,
+            'images' => $images,
             'url' => route('projects.show', $project->slug),
         ];
     }

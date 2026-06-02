@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasLocalizedFields;
+use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Model;
 
 class Project extends Model
@@ -18,6 +19,7 @@ class Project extends Model
         'project_period',
         'status',
         'image_path',
+        'gallery_images',
         'is_featured',
         'is_published',
     ];
@@ -27,8 +29,21 @@ class Project extends Model
         return [
             'title' => 'array',
             'description' => 'array',
+            'gallery_images' => 'array',
             'is_featured' => 'boolean',
             'is_published' => 'boolean',
         ];
+    }
+
+    public function setDescriptionAttribute($value): void
+    {
+        $this->attributes['description'] = json_encode($this->sanitizeLocalizedHtml($value));
+    }
+
+    private function sanitizeLocalizedHtml($value): array
+    {
+        return collect(is_array($value) ? $value : ['en' => $value])
+            ->map(fn ($item) => is_string($item) ? HtmlSanitizer::richText($item) : '')
+            ->all();
     }
 }

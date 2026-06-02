@@ -34,7 +34,12 @@ class ServiceForm
                         Toggle::make('is_featured')->label('Featured')->default(false),
                         Toggle::make('is_published')->label('Published')->default(true),
                     ]),
-                    FileUpload::make('image_path')->label('Image')->image()->directory('services'),
+                    FileUpload::make('image_path')
+                        ->label('Image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('services')
+                        ->maxSize(5120),
                 ]),
             ]);
     }

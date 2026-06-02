@@ -19,7 +19,13 @@ class PageForm
                 Section::make('Page details')->schema([
                     TextInput::make('slug')->required()->unique(ignoreRecord: true)->maxLength(255),
                     Toggle::make('is_published')->default(true),
-                    FileUpload::make('hero_image_path')->label('Hero image')->image()->directory('pages')->columnSpanFull(),
+                    FileUpload::make('hero_image_path')
+                        ->label('Hero image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('pages')
+                        ->maxSize(5120)
+                        ->columnSpanFull(),
                 ])->columns(2),
                 Section::make('English content')->schema([
                     TextInput::make('title.en')->label('Title')->required()->maxLength(255),

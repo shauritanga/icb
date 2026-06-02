@@ -24,7 +24,11 @@ class NewsPostForm
                         DateTimePicker::make('published_at'),
                         Toggle::make('is_published')->default(true),
                     ]),
-                    FileUpload::make('image_path')->image()->directory('news'),
+                    FileUpload::make('image_path')
+                        ->image()
+                        ->disk('public')
+                        ->directory('news')
+                        ->maxSize(5120),
                 ]),
                 Section::make('English content')->schema([
                     TextInput::make('title.en')->label('Title')->required()->maxLength(255),
