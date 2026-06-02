@@ -210,7 +210,9 @@ class SiteController extends Controller
             'profession' => $staff->profession,
             'qualification' => $staff->qualification,
             'experience' => $staff->experience,
-            'photo' => $staff->photo_path ? asset('storage/'.$staff->photo_path) : ($demoImages[$staff->name] ?? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&h=1200&fit=crop&crop=faces,entropy&auto=format&q=80'),
+            'photo' => $staff->photo_path
+                ? $this->imageUrl($staff->photo_path)
+                : ($demoImages[$staff->name] ?? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&h=1200&fit=crop&crop=faces,entropy&auto=format&q=80'),
         ];
     }
 
@@ -251,7 +253,18 @@ class SiteController extends Controller
         }
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            $host = parse_url($path, PHP_URL_HOST);
+            $urlPath = parse_url($path, PHP_URL_PATH);
+
+            if (in_array($host, ['localhost', '127.0.0.1'], true) && is_string($urlPath) && str_starts_with($urlPath, '/storage/')) {
+                return asset(ltrim($urlPath, '/'));
+            }
+
             return $path;
+        }
+
+        if (str_starts_with($path, '/storage/')) {
+            return asset(ltrim($path, '/'));
         }
 
         if (str_starts_with($path, 'demo/')) {

@@ -277,7 +277,10 @@ class AdminApiController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        return response()->json(['url' => Storage::disk('public')->url($path)]);
+        return response()->json([
+            'path' => $path,
+            'url' => Storage::disk('public')->url($path),
+        ]);
     }
 
     public function users(Request $request): JsonResponse

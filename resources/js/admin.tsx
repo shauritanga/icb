@@ -128,7 +128,7 @@ async function uploadFile(file: File): Promise<string> {
     });
     if (!res.ok) throw new Error('Upload failed');
     const data = await res.json();
-    return data.url as string;
+    return (data.path ?? data.url) as string;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -951,6 +951,245 @@ function RecentList({ title, items }: { title: string; items: { title: string; m
     );
 }
 
+function DashboardShowcase({ setActive }: { setActive: (v: string) => void }) {
+    const [data, setData] = useState<DashboardData | null>(null);
+
+    useEffect(() => {
+        api('/api/admin/dashboard').then(setData);
+    }, []);
+
+    if (!data) {
+        return (
+            <div className="flex items-center justify-center h-40 text-slate-400">
+                <Spinner /> <span className="ml-3">Loading dashboard...</span>
+            </div>
+        );
+    }
+
+    const statIcon: Record<string, any> = {
+        pages: FileText,
+        services: Wrench,
+        projects: FolderOpen,
+        staff: UsersRound,
+        news: Newspaper,
+        documents: BookOpen,
+    };
+    const statColor: Record<string, { icon: string; bg: string }> = {
+        pages: { icon: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+        services: { icon: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+        projects: { icon: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+        staff: { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+        news: { icon: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+        documents: { icon: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+    };
+    const recentUpdates = [
+        ...data.news.slice(0, 2).map((item, index) => ({
+            id: `news-${index}`,
+            section: 'News feed',
+            sectionTone: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+            time: item.date || 'Recently updated',
+            title: item.title,
+            summary: item.published ? 'Published to the public news feed and available on the website.' : 'Saved as draft and ready for editorial review.',
+            author: 'CMS editor',
+            resource: 'news',
+            published: item.published,
+            Icon: Newspaper,
+            accent: 'from-blue-500 to-cyan-400',
+        })),
+        ...data.projects.slice(0, 2).map((item, index) => ({
+            id: `project-${index}`,
+            section: 'Featured project',
+            sectionTone: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+            time: item.status || 'Project updated',
+            title: item.title,
+            summary: `Client: ${item.client}. ${item.published ? 'Visible on the public projects page.' : 'Still hidden from the public site.'}`,
+            author: 'Project editor',
+            resource: 'projects',
+            published: item.published,
+            Icon: BriefcaseBusiness,
+            accent: 'from-violet-500 to-indigo-500',
+        })),
+    ].slice(0, 4);
+    const quickActions = [
+        { label: 'Featured Projects', hint: 'Review portfolio highlights', resource: 'projects', Icon: BriefcaseBusiness },
+        { label: 'Leadership Team', hint: 'Update staff profiles', resource: 'staff', Icon: Users },
+        { label: 'News Feed', hint: 'Publish the latest updates', resource: 'news', Icon: Newspaper },
+        { label: 'New Page', hint: 'Create public website content', resource: 'pages', Icon: Plus },
+    ];
+    const healthTone = (percent: number) =>
+        percent >= 100 ? 'bg-emerald-500' : percent >= 60 ? 'bg-amber-400' : 'bg-rose-500';
+
+    return (
+        <div className="grid gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {data.stats.filter((s) => s.resource !== 'news').map((stat) => {
+                    const Icon = statIcon[stat.resource] ?? FileText;
+                    const clr = statColor[stat.resource] ?? statColor.pages;
+
+                    return (
+                        <button
+                            key={stat.label}
+                            onClick={() => setActive(stat.resource)}
+                            className="group bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 text-left shadow-card hover:shadow-card-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+                        >
+                            <div className="flex items-start justify-between mb-3">
+                                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 leading-snug pr-2">
+                                    {stat.label}
+                                </span>
+                                <span className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center ${clr.bg} ${clr.icon}`}>
+                                    <Icon size={17} />
+                                </span>
+                            </div>
+                            <p className="text-[1.5rem] font-bold text-slate-700 dark:text-slate-200 leading-none tracking-tight">
+                                {stat.value.toLocaleString()}
+                            </p>
+                            <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500 leading-snug">
+                                {stat.meta}
+                            </p>
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]">
+                <section className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-2xl shadow-card overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700/70">
+                        <div>
+                            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Editorial activity</span>
+                            <h2 className="mt-1 text-base font-extrabold text-navy-800 dark:text-slate-100">Recent Updates</h2>
+                        </div>
+                        <button
+                            onClick={() => setActive('news')}
+                            className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 transition-colors"
+                        >
+                            View all
+                        </button>
+                    </div>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-700/70">
+                        {recentUpdates.map((item) => {
+                            const Icon = item.Icon;
+
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActive(item.resource)}
+                                    className="grid w-full text-left gap-4 px-5 py-5 md:grid-cols-[148px_minmax(0,1fr)] hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
+                                >
+                                    <div className={`relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br ${item.accent} p-[1px] min-h-[108px]`}>
+                                        <div className="flex h-full min-h-[106px] items-end justify-between rounded-[11px] bg-white/95 dark:bg-slate-900/90 px-4 py-3">
+                                            <div className="space-y-2">
+                                                <span className="inline-flex w-8 h-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                                                    <Icon size={17} />
+                                                </span>
+                                                <div className="space-y-1">
+                                                    <div className="h-2 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
+                                                    <div className="h-2 w-24 rounded-full bg-slate-100 dark:bg-slate-800" />
+                                                </div>
+                                            </div>
+                                            <div className="grid gap-1 self-start opacity-80">
+                                                <div className="h-10 w-14 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                                                <div className="h-2 w-14 rounded-full bg-slate-200 dark:bg-slate-700" />
+                                                <div className="h-2 w-10 rounded-full bg-slate-100 dark:bg-slate-800" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 text-[12px] mb-2">
+                                            <span className={`inline-flex rounded-full px-2.5 py-1 font-bold uppercase tracking-[0.08em] ${item.sectionTone}`}>
+                                                {item.section}
+                                            </span>
+                                            <span className="text-slate-400 dark:text-slate-500">{item.time}</span>
+                                        </div>
+                                        <h3 className="text-[15px] font-bold text-indigo-800 dark:text-indigo-200 leading-snug">
+                                            {item.title}
+                                        </h3>
+                                        <p className="mt-2 text-[13px] leading-5 text-slate-500 dark:text-slate-400">
+                                            {item.summary}
+                                        </p>
+                                        <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-slate-500 dark:text-slate-400">
+                                            <span className="inline-flex items-center gap-2">
+                                                <UserRound size={14} />
+                                                Editor: {item.author}
+                                            </span>
+                                            {item.published ? (
+                                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                                    <CheckCircle2 size={14} /> Live
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-amber-500 dark:text-amber-300">
+                                                    <XCircle size={14} /> Draft
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                <div className="grid gap-4 content-start">
+                    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-violet-700 p-5 text-white shadow-card">
+                        <div className="absolute -right-6 bottom-0 text-white/10">
+                            <LayoutDashboard size={120} strokeWidth={1.2} />
+                        </div>
+                        <div className="relative">
+                            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-indigo-200/80">Shortcuts</span>
+                            <h2 className="mt-1 text-lg font-extrabold">Quick Actions</h2>
+                            <div className="mt-5 grid gap-2.5">
+                                {quickActions.map((action) => {
+                                    const Icon = action.Icon;
+
+                                    return (
+                                        <button
+                                            key={action.label}
+                                            onClick={() => setActive(action.resource)}
+                                            className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-left backdrop-blur-sm transition hover:bg-white/15"
+                                        >
+                                            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                                                <Icon size={18} />
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <strong className="block text-[13px] font-bold text-white">{action.label}</strong>
+                                                <span className="block text-[11px] text-indigo-100/75">{action.hint}</span>
+                                            </span>
+                                            <ChevronRight size={16} className="shrink-0 text-indigo-100/75" />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-2xl p-5 shadow-card">
+                        <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Publishing readiness</span>
+                        <h2 className="mt-1 text-base font-extrabold text-navy-800 dark:text-slate-100">System Health</h2>
+                        <div className="mt-5 grid gap-4">
+                            {data.health.slice(0, 4).map((check) => (
+                                <button
+                                    key={check.label}
+                                    onClick={() => setActive(check.resource)}
+                                    className="flex items-start gap-3 text-left"
+                                >
+                                    <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${healthTone(check.percent)}`} />
+                                    <span className="min-w-0">
+                                        <strong className="block text-sm font-bold text-slate-800 dark:text-slate-200">
+                                            {check.label}
+                                        </strong>
+                                        <span className="mt-0.5 block text-[13px] leading-5 text-slate-500 dark:text-slate-400">
+                                            {check.percent >= 100 ? `Ready: ${check.value} of ${check.target} target items published.` : `${check.value} of ${check.target} target items published.`}
+                                        </span>
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─────────────────────────────────────────────────────────
 // Field input rendering
 // ─────────────────────────────────────────────────────────
@@ -1736,7 +1975,7 @@ function AdminApp() {
 
                     {/* Scrollable content */}
                     <main className="flex-1 overflow-y-auto p-6 dark:bg-slate-950">
-                        {active === 'dashboard' && <Dashboard setActive={setActive} />}
+                        {active === 'dashboard' && <DashboardShowcase setActive={setActive} />}
                         {active === 'users' && <UserManager />}
                         {active !== 'dashboard' && active !== 'users' && <ResourceManager resource={active} />}
                     </main>
