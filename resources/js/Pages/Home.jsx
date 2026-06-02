@@ -1,5 +1,19 @@
 import { Link } from '@inertiajs/react';
-import { ArrowRight, Award, CalendarDays, ClipboardCheck, DraftingCompass, Newspaper, UsersRound } from 'lucide-react';
+import {
+    ArrowRight,
+    Award,
+    Building2,
+    CalendarDays,
+    ClipboardCheck,
+    ClipboardList,
+    DraftingCompass,
+    HardHat,
+    Monitor,
+    Newspaper,
+    Settings2,
+    UsersRound,
+    Zap,
+} from 'lucide-react';
 import { CircularTestimonials } from '@/Components/ui/circular-testimonials';
 import Layout from '../Components/Layout';
 import { ImageBlock, SectionHead } from '../Components/UI';
@@ -28,6 +42,21 @@ function leadershipQuote(member) {
     }
 
     return `${member.name} contributes professional leadership to the bureau's consultancy, training, and project advisory services.`;
+}
+
+const ICON_MAP = {
+    Building2,
+    ClipboardList,
+    DraftingCompass,
+    HardHat,
+    Monitor,
+    Settings2,
+    Zap,
+};
+
+function ServiceIcon({ name, size = 22 }) {
+    const Icon = ICON_MAP[name] ?? DraftingCompass;
+    return <Icon size={size} />;
 }
 
 export default function Home({ services = [], projects = [], staff = [], news = [], settings = {}, locale = 'en' }) {
@@ -76,7 +105,7 @@ export default function Home({ services = [], projects = [], staff = [], news = 
                     {services.map((service, i) => (
                         <article className={card} key={service.title} style={{ transitionDelay: `${i * 0.08}s` }}>
                             <span className="w-[46px] h-[46px] grid place-items-center bg-brand-sky text-navy-600 rounded-md mb-4">
-                                <DraftingCompass size={22} />
+                                <ServiceIcon name={service.icon} />
                             </span>
                             <h3 className="mb-2.5 text-navy-800 font-extrabold text-[1.2rem] leading-[1.2]">{service.title}</h3>
                             <p className="text-slate-500 leading-[1.65]">{service.summary}</p>
