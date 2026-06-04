@@ -13,7 +13,9 @@ class EnsureAdmin
     {
         $user = $request->user();
 
-        if (! $user?->is_admin) {
+        $hasAccess = $user?->is_admin || in_array($user?->role, ['admin', 'editor'], true);
+
+        if (! $hasAccess) {
             if ($request->expectsJson()) {
                 return new JsonResponse([
                     'message' => 'Administrator access is required.',

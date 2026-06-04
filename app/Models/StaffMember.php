@@ -10,6 +10,7 @@ class StaffMember extends Model
     use HasLocalizedFields;
 
     protected $fillable = [
+        'slug',
         'name',
         'position',
         'profession',

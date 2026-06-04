@@ -45,7 +45,6 @@ export default function Project({ project, settings = {}, locale = 'en' }) {
 
     return (
         <Layout settings={settings} locale={locale}>
-
             {/* ── Standard hero ───────────────────────────── */}
             <PageHero eyebrow="Project" title={project.title}>
                 {project.client_name}

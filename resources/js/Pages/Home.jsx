@@ -8,6 +8,8 @@ import {
     ClipboardList,
     DraftingCompass,
     HardHat,
+    Images,
+    MapPin,
     Monitor,
     Newspaper,
     Settings2,
@@ -59,7 +61,7 @@ function ServiceIcon({ name, size = 22 }) {
     return <Icon size={size} />;
 }
 
-export default function Home({ services = [], projects = [], staff = [], news = [], settings = {}, locale = 'en' }) {
+export default function Home({ services = [], projects = [], staff = [], news = [], gallery = [], events = [], settings = {}, locale = 'en' }) {
     const leadershipTestimonials = staff.map((member, index) => ({
         quote: leadershipQuote(member),
         name: member.name,
@@ -229,6 +231,73 @@ export default function Home({ services = [], projects = [], staff = [], news = 
                     )}
                 </div>
             </section>
+
+            {/* Upcoming Events */}
+            {events.length > 0 && (
+                <section className="py-[clamp(54px,7vw,88px)] bg-brand-muted bg-dot-pattern">
+                    <SectionHead eyebrow="What's on" title="Upcoming events" href="/events" action="View all events" />
+                    <div className="max-w-[1180px] mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">
+                        {events.map((event, i) => (
+                            <Link
+                                key={event.slug}
+                                href={event.url}
+                                className="group bg-white border border-border-light rounded-lg shadow-card overflow-hidden transition-[box-shadow,transform] duration-[220ms] hover:-translate-y-1 hover:shadow-card-lg reveal"
+                                style={{ transitionDelay: `${i * 0.07}s` }}
+                            >
+                                {event.image ? (
+                                    <div className="overflow-hidden h-40">
+                                        <img src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                    </div>
+                                ) : (
+                                    <div className="h-40 bg-gradient-to-br from-brand-sky to-white flex items-center justify-center">
+                                        <CalendarDays size={32} className="text-navy-400" />
+                                    </div>
+                                )}
+                                <div className="p-5">
+                                    {event.event_date && (
+                                        <span className="inline-flex items-center gap-1.5 text-[0.78rem] font-extrabold uppercase tracking-[0.08em] text-[#bb7d00] mb-2">
+                                            <CalendarDays size={12} /> {event.event_date}
+                                        </span>
+                                    )}
+                                    <h3 className="text-navy-800 font-extrabold text-[1.05rem] leading-[1.25] group-hover:text-navy-600 transition-colors">{event.title}</h3>
+                                    {event.location && (
+                                        <span className="inline-flex items-center gap-1.5 text-slate-500 text-sm mt-2">
+                                            <MapPin size={12} className="shrink-0" />{event.location}
+                                        </span>
+                                    )}
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Gallery */}
+            {gallery.length > 0 && (
+                <section className="py-[clamp(54px,7vw,88px)] bg-white">
+                    <SectionHead eyebrow="Photo gallery" title="Bureau in action" />
+                    <div className="max-w-[1180px] mx-auto px-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {gallery.map((item, i) => (
+                            <div
+                                key={i}
+                                className="group relative overflow-hidden rounded-lg border border-border-light shadow-card reveal"
+                                style={{ transitionDelay: `${i * 0.05}s` }}
+                            >
+                                <img
+                                    src={item.image}
+                                    alt={item.title || ''}
+                                    className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                {item.caption && (
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy-900/80 to-transparent px-4 py-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                        <p className="text-white text-sm font-semibold leading-snug">{item.caption}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Leadership */}
             <section className="overflow-hidden bg-white py-[clamp(54px,7vw,88px)]">

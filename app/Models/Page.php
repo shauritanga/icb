@@ -10,7 +10,7 @@ class Page extends Model
 {
     use HasLocalizedFields;
 
-    protected $fillable = ['slug', 'title', 'excerpt', 'body', 'hero_image_path', 'is_published'];
+    protected $fillable = ['slug', 'title', 'excerpt', 'body', 'hero_image_path', 'is_published', 'meta_title', 'meta_description', 'og_image_path'];
 
     protected function casts(): array
     {
@@ -18,6 +18,8 @@ class Page extends Model
             'title' => 'array',
             'excerpt' => 'array',
             'body' => 'array',
+            'meta_title' => 'array',
+            'meta_description' => 'array',
             'is_published' => 'boolean',
         ];
     }

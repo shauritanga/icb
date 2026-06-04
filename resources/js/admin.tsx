@@ -15,6 +15,7 @@ import {
     Bell,
     BookOpen,
     BriefcaseBusiness,
+    Calendar,
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
@@ -22,10 +23,12 @@ import {
     ExternalLink,
     FileText,
     FolderOpen,
+    Globe,
     LayoutDashboard,
     Link2,
     LogOut,
     Newspaper,
+    Phone,
     Plus,
     Save,
     Search,
@@ -37,16 +40,21 @@ import {
     UsersRound,
     Moon,
     PanelLeft,
+    Share2,
     Sun,
     Wrench,
     XCircle,
 } from 'lucide-react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
 
 // ─────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────
 
-type AuthUser = { name: string; email: string };
+type AuthUser = { name: string; email: string; role?: string };
 type FieldType = 'text' | 'textarea' | 'richtext' | 'number' | 'boolean' | 'datetime' | 'image' | 'file' | 'select' | 'images';
 type Field = {
     name: string;
@@ -75,11 +83,11 @@ type PaginationMeta = {
 type DashboardData = {
     stats: { label: string; value: number; meta: string; resource: string }[];
     health: { label: string; value: number; target: number; percent: number; status: string; resource: string }[];
-    projects: { title: string; client: string; status: string; published: boolean }[];
-    news: { title: string; date: string; published: boolean }[];
+    projects: { title: string; client: string; status: string; published: boolean; image: string | null }[];
+    news: { title: string; date: string; published: boolean; image: string | null }[];
 };
 type ToastItem = { id: number; type: 'success' | 'error'; message: string };
-type AdminUserRecord = { id: number; name: string; email: string; is_admin: boolean };
+type AdminUserRecord = { id: number; name: string; email: string; is_admin: boolean; role?: string };
 
 // ─────────────────────────────────────────────────────────
 // API helpers
@@ -203,72 +211,81 @@ function useToast() {
 }
 
 // ─────────────────────────────────────────────────────────
-// Rich Text Editor (contentEditable + execCommand)
+// Rich Text Editor (TipTap)
 // ─────────────────────────────────────────────────────────
 
 function RichTextEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-    const editorRef = useRef<HTMLDivElement>(null);
-    const focused = useRef(false);
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Underline,
+            Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } }),
+        ],
+        content: value ?? '',
+        onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    });
 
+    // Sync external value changes (e.g. switching records) without looping
+    const prevValueRef = useRef(value);
     useEffect(() => {
-        if (editorRef.current && !focused.current) {
-            editorRef.current.innerHTML = value ?? '';
+        if (!editor || value === prevValueRef.current) return;
+        prevValueRef.current = value;
+        if (editor.getHTML() !== value) {
+            editor.commands.setContent(value ?? '', false);
         }
-    }, [value]);
+    }, [value, editor]);
 
-    function exec(command: string, arg?: string) {
-        editorRef.current?.focus();
-        document.execCommand(command, false, arg ?? '');
-        onChange(editorRef.current?.innerHTML ?? '');
-    }
+    if (!editor) return null;
+
+    const btnCls = (active: boolean) =>
+        `px-2 py-1 rounded text-xs font-semibold transition-colors cursor-pointer border-0 ${
+            active
+                ? 'bg-navy-600 text-white'
+                : 'bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+        }`;
+    const sep = <span className="w-px bg-slate-200 dark:bg-slate-700 mx-0.5 self-stretch" />;
 
     function handleLink() {
-        const url = window.prompt('Enter link URL:');
-        if (url) exec('createLink', url);
+        const prev = editor.getAttributes('link').href ?? '';
+        const url = window.prompt('Link URL:', prev);
+        if (url === null) return;
+        if (url === '') {
+            editor.chain().focus().unsetLink().run();
+        } else {
+            editor.chain().focus().setLink({ href: url }).run();
+        }
     }
 
-    const btnCls =
-        'px-2 py-1 rounded text-xs font-semibold hover:bg-slate-200 transition-colors cursor-pointer border-0 bg-transparent';
-    const sep = <span className="w-px bg-slate-300 mx-0.5 self-stretch" />;
-
     return (
-        <div className="border border-slate-300 rounded-lg overflow-hidden">
-            <div className="flex gap-0.5 flex-wrap items-center p-1.5 bg-slate-50 border-b border-slate-200">
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); exec('bold'); }}>
+        <div className="border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
+            <div className="flex gap-0.5 flex-wrap items-center p-1.5 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                <button type="button" className={btnCls(editor.isActive('bold'))} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }}>
                     <strong>B</strong>
                 </button>
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); exec('italic'); }}>
+                <button type="button" className={btnCls(editor.isActive('italic'))} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }}>
                     <em>I</em>
                 </button>
-                <button type="button" className={`${btnCls} underline`} onMouseDown={(e) => { e.preventDefault(); exec('underline'); }}>
+                <button type="button" className={`${btnCls(editor.isActive('underline'))} underline`} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }}>
                     U
                 </button>
                 {sep}
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); exec('formatBlock', 'h2'); }}>H2</button>
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); exec('formatBlock', 'h3'); }}>H3</button>
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); exec('formatBlock', 'p'); }}>P</button>
+                <button type="button" className={btnCls(editor.isActive('heading', { level: 2 }))} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 2 }).run(); }}>H2</button>
+                <button type="button" className={btnCls(editor.isActive('heading', { level: 3 }))} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 3 }).run(); }}>H3</button>
+                <button type="button" className={btnCls(editor.isActive('paragraph'))} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setParagraph().run(); }}>P</button>
                 {sep}
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); exec('insertUnorderedList'); }}>• List</button>
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); exec('insertOrderedList'); }}>1. List</button>
+                <button type="button" className={btnCls(editor.isActive('bulletList'))} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }}>• List</button>
+                <button type="button" className={btnCls(editor.isActive('orderedList'))} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }}>1. List</button>
                 {sep}
-                <button type="button" className={btnCls} onMouseDown={(e) => { e.preventDefault(); handleLink(); }}>
+                <button type="button" className={btnCls(editor.isActive('link'))} onMouseDown={(e) => { e.preventDefault(); handleLink(); }}>
                     <Link2 size={13} className="inline" />
                 </button>
-                <button type="button" className={`${btnCls} text-slate-400`} onMouseDown={(e) => { e.preventDefault(); exec('removeFormat'); }}>
+                <button type="button" className={`${btnCls(false)} text-slate-400`} onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().unsetAllMarks().clearNodes().run(); }}>
                     Clear
                 </button>
             </div>
-            <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                className="rte-content min-h-[160px] p-3 outline-none text-sm text-slate-800"
-                onFocus={() => { focused.current = true; }}
-                onBlur={() => {
-                    focused.current = false;
-                    onChange(editorRef.current?.innerHTML ?? '');
-                }}
-                onInput={() => onChange(editorRef.current?.innerHTML ?? '')}
+            <EditorContent
+                editor={editor}
+                className="rte-content min-h-[160px] p-3 text-sm text-slate-800 dark:text-slate-200 dark:bg-slate-800 outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[140px]"
             />
         </div>
     );
@@ -289,6 +306,7 @@ function FileUpload({
     accept?: string;
     isImage?: boolean;
 }) {
+    const { show } = useToast();
     const [uploading, setUploading] = useState(false);
     const [dragOver, setDragOver] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -297,12 +315,16 @@ function FileUpload({
         isImage && value && (value.startsWith('/') || value.startsWith('http')) ? value : null;
 
     async function handleFile(file: File) {
+        if (file.size > 10 * 1024 * 1024) {
+            show('error', 'File is too large. Maximum size is 10 MB.');
+            return;
+        }
         setUploading(true);
         try {
             const url = await uploadFile(file);
             onChange(url);
         } catch {
-            alert('Upload failed. Please check the file type and try again.');
+            show('error', 'Upload failed. Please check the file type and try again.');
         } finally {
             setUploading(false);
         }
@@ -389,6 +411,7 @@ function MultiImageUpload({
     value: string | string[] | null;
     onChange: (json: string) => void;
 }) {
+    const { show } = useToast();
     const [uploading, setUploading] = useState(false);
     const [urlInput, setUrlInput] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -415,12 +438,16 @@ function MultiImageUpload({
     }
 
     async function handleFile(file: File) {
+        if (file.size > 10 * 1024 * 1024) {
+            show('error', 'File is too large. Maximum size is 10 MB.');
+            return;
+        }
         setUploading(true);
         try {
             const url = await uploadFile(file);
             emit([...urls, url]);
         } catch {
-            alert('Upload failed. Please check the file type and try again.');
+            show('error', 'Upload failed. Please check the file type and try again.');
         } finally {
             setUploading(false);
         }
@@ -558,6 +585,7 @@ const navResources = [
     { id: 'projects',  label: 'Projects',  Icon: BriefcaseBusiness },
     { id: 'staff',     label: 'Staff',     Icon: UsersRound },
     { id: 'news',      label: 'News',      Icon: Newspaper },
+    { id: 'events',    label: 'Events',    Icon: Calendar },
     { id: 'gallery',   label: 'Gallery',   Icon: BookOpen },
     { id: 'documents', label: 'Documents', Icon: FolderOpen },
     { id: 'settings',  label: 'Settings',  Icon: Settings },
@@ -732,11 +760,13 @@ function Sidebar({
                     </button>
                 ))}
 
-                <button className={navBtn('users')} onClick={() => goTo('users')}>
-                    {active === 'users' && <span className="absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-gold-400" />}
-                    <Users size={16} />
-                    Users
-                </button>
+                {user.role === 'admin' && (
+                    <button className={navBtn('users')} onClick={() => goTo('users')}>
+                        {active === 'users' && <span className="absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-gold-400" />}
+                        <Users size={16} />
+                        Users
+                    </button>
+                )}
             </nav>
 
             {/* User block at bottom */}
@@ -853,7 +883,7 @@ function Dashboard({ setActive }: { setActive: (v: string) => void }) {
     return (
         <div className="grid gap-5">
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {data.stats.filter((s) => s.resource !== 'news').map((stat) => {
                     const Icon = statIcon[stat.resource] ?? FileText;
                     const clr = statColor[stat.resource] ?? statColor.pages;
@@ -861,21 +891,18 @@ function Dashboard({ setActive }: { setActive: (v: string) => void }) {
                         <button
                             key={stat.label}
                             onClick={() => setActive(stat.resource)}
-                            className="group bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 text-left shadow-card hover:shadow-card-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+                            className="group bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-4 text-left shadow-card hover:shadow-card-lg hover:-translate-y-0.5 transition-all cursor-pointer"
                         >
-                            <div className="flex items-start justify-between mb-3">
-                                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 leading-snug pr-2">
-                                    {stat.label}
-                                </span>
-                                <span className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center ${clr.bg} ${clr.icon}`}>
-                                    <Icon size={17} />
+                            <div className="flex items-center justify-between mb-3">
+                                <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${clr.bg} ${clr.icon}`}>
+                                    <Icon size={15} />
                                 </span>
                             </div>
-                            <p className="text-[1.5rem] font-bold text-slate-700 dark:text-slate-200 leading-none tracking-tight">
+                            <p className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-none tabular-nums">
                                 {stat.value.toLocaleString()}
                             </p>
-                            <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500 leading-snug">
-                                {stat.meta}
+                            <p className="mt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-snug">
+                                {stat.label}
                             </p>
                         </button>
                     );
@@ -885,21 +912,20 @@ function Dashboard({ setActive }: { setActive: (v: string) => void }) {
             {/* Health + Recent */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 shadow-card">
-                    <span className="text-navy-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-widest">Publishing readiness</span>
-                    <h2 className="mt-1 text-base font-extrabold text-navy-800 dark:text-slate-100 mb-4">Content health</h2>
+                    <h2 className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 mb-3">Content health</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {data.health.map((check) => (
                             <div key={check.label} className="border border-slate-100 dark:border-slate-700 rounded-lg p-3">
                                 <div className="flex justify-between items-center mb-1">
-                                    <strong className="text-xs font-bold text-slate-700 dark:text-slate-300">{check.label}</strong>
-                                    <span className={`text-[10px] font-bold ${check.percent >= 100 ? 'text-green-600' : 'text-amber-600'}`}>
+                                    <strong className="text-[11px] font-medium text-slate-600 dark:text-slate-300">{check.label}</strong>
+                                    <span className={`text-[10px] font-semibold ${check.percent >= 100 ? 'text-green-600' : 'text-amber-600'}`}>
                                         {check.status}
                                     </span>
                                 </div>
-                                <p className="text-sm font-extrabold text-navy-800 dark:text-slate-100 mb-2">
+                                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-2 tabular-nums">
                                     {check.value} / {check.target}
                                 </p>
-                                <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                     <div
                                         className="h-full rounded-full transition-all"
                                         style={{
@@ -931,7 +957,7 @@ function Dashboard({ setActive }: { setActive: (v: string) => void }) {
 function RecentList({ title, items }: { title: string; items: { title: string; meta: string; published: boolean }[] }) {
     return (
         <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 shadow-card">
-            <h2 className="text-base font-extrabold text-navy-800 dark:text-slate-100 mb-3">{title}</h2>
+            <h2 className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 mb-3">{title}</h2>
             <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {items.map((item) => (
                     <div key={item.title} className="flex items-center justify-between gap-3 py-2.5">
@@ -961,229 +987,215 @@ function DashboardShowcase({ setActive }: { setActive: (v: string) => void }) {
     if (!data) {
         return (
             <div className="flex items-center justify-center h-40 text-slate-400">
-                <Spinner /> <span className="ml-3">Loading dashboard...</span>
+                <Spinner /> <span className="ml-3">Loading dashboard…</span>
             </div>
         );
     }
 
     const statIcon: Record<string, any> = {
-        pages: FileText,
-        services: Wrench,
-        projects: FolderOpen,
-        staff: UsersRound,
-        news: Newspaper,
-        documents: BookOpen,
+        pages: FileText, services: Wrench, projects: FolderOpen,
+        staff: UsersRound, news: Newspaper, documents: BookOpen, events: Calendar,
     };
     const statColor: Record<string, { icon: string; bg: string }> = {
-        pages: { icon: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-        services: { icon: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
-        projects: { icon: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-        staff: { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-        news: { icon: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+        pages:     { icon: 'text-blue-600 dark:text-blue-400',    bg: 'bg-blue-50 dark:bg-blue-900/20' },
+        services:  { icon: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+        projects:  { icon: 'text-amber-600 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-900/20' },
+        staff:     { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
         documents: { icon: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+        events:    { icon: 'text-rose-600 dark:text-rose-400',     bg: 'bg-rose-50 dark:bg-rose-900/20' },
     };
-    const recentUpdates = [
-        ...data.news.slice(0, 2).map((item, index) => ({
-            id: `news-${index}`,
-            section: 'News feed',
-            sectionTone: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-            time: item.date || 'Recently updated',
-            title: item.title,
-            summary: item.published ? 'Published to the public news feed and available on the website.' : 'Saved as draft and ready for editorial review.',
-            author: 'CMS editor',
-            resource: 'news',
-            published: item.published,
-            Icon: Newspaper,
-            accent: 'from-blue-500 to-cyan-400',
-        })),
-        ...data.projects.slice(0, 2).map((item, index) => ({
-            id: `project-${index}`,
-            section: 'Featured project',
-            sectionTone: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-            time: item.status || 'Project updated',
-            title: item.title,
-            summary: `Client: ${item.client}. ${item.published ? 'Visible on the public projects page.' : 'Still hidden from the public site.'}`,
-            author: 'Project editor',
-            resource: 'projects',
-            published: item.published,
-            Icon: BriefcaseBusiness,
-            accent: 'from-violet-500 to-indigo-500',
-        })),
-    ].slice(0, 4);
     const quickActions = [
-        { label: 'Featured Projects', hint: 'Review portfolio highlights', resource: 'projects', Icon: BriefcaseBusiness },
-        { label: 'Leadership Team', hint: 'Update staff profiles', resource: 'staff', Icon: Users },
-        { label: 'News Feed', hint: 'Publish the latest updates', resource: 'news', Icon: Newspaper },
-        { label: 'New Page', hint: 'Create public website content', resource: 'pages', Icon: Plus },
+        { label: 'Projects',   hint: 'Manage portfolio',      resource: 'projects',  Icon: BriefcaseBusiness },
+        { label: 'Staff',      hint: 'Update team profiles',  resource: 'staff',     Icon: Users },
+        { label: 'News',       hint: 'Publish announcements', resource: 'news',      Icon: Newspaper },
+        { label: 'Events',     hint: 'Add upcoming events',   resource: 'events',    Icon: Calendar },
     ];
-    const healthTone = (percent: number) =>
-        percent >= 100 ? 'bg-emerald-500' : percent >= 60 ? 'bg-amber-400' : 'bg-rose-500';
+    const healthTone = (p: number) => p >= 100 ? 'bg-emerald-500' : p >= 60 ? 'bg-amber-400' : 'bg-rose-500';
+    const healthText = (p: number) => p >= 100 ? 'text-emerald-600 dark:text-emerald-400' : p >= 60 ? 'text-amber-500' : 'text-rose-500';
+
+    const visibleStats = data.stats.filter((s) => s.resource !== 'news');
 
     return (
-        <div className="grid gap-5">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {data.stats.filter((s) => s.resource !== 'news').map((stat) => {
-                    const Icon = statIcon[stat.resource] ?? FileText;
-                    const clr = statColor[stat.resource] ?? statColor.pages;
+        <div className="grid gap-4">
 
+            {/* ── Stat strip ─────────────────────────────────── */}
+            <div className="grid grid-cols-3 xl:grid-cols-6 gap-3">
+                {visibleStats.map((stat) => {
+                    const Icon = statIcon[stat.resource] ?? FileText;
+                    const clr  = statColor[stat.resource] ?? statColor.pages;
                     return (
                         <button
-                            key={stat.label}
+                            key={stat.resource}
                             onClick={() => setActive(stat.resource)}
-                            className="group bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 text-left shadow-card hover:shadow-card-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+                            className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl px-4 py-3.5 text-left shadow-card hover:-translate-y-0.5 hover:shadow-card-lg transition-all cursor-pointer"
                         >
-                            <div className="flex items-start justify-between mb-3">
-                                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 leading-snug pr-2">
-                                    {stat.label}
-                                </span>
-                                <span className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center ${clr.bg} ${clr.icon}`}>
-                                    <Icon size={17} />
-                                </span>
-                            </div>
-                            <p className="text-[1.5rem] font-bold text-slate-700 dark:text-slate-200 leading-none tracking-tight">
+                            <span className={`inline-flex w-7 h-7 rounded-lg items-center justify-center mb-3 ${clr.bg} ${clr.icon}`}>
+                                <Icon size={14} />
+                            </span>
+                            <p className="text-[22px] font-bold text-slate-800 dark:text-slate-100 leading-none tabular-nums">
                                 {stat.value.toLocaleString()}
                             </p>
-                            <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500 leading-snug">
-                                {stat.meta}
+                            <p className="mt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                                {stat.label}
                             </p>
                         </button>
                     );
                 })}
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]">
-                <section className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-2xl shadow-card overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700/70">
-                        <div>
-                            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Editorial activity</span>
-                            <h2 className="mt-1 text-base font-extrabold text-navy-800 dark:text-slate-100">Recent Updates</h2>
-                        </div>
-                        <button
-                            onClick={() => setActive('news')}
-                            className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 transition-colors"
-                        >
-                            View all
-                        </button>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-700/70">
-                        {recentUpdates.map((item) => {
-                            const Icon = item.Icon;
+            {/* ── Main body ──────────────────────────────────── */}
+            <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
 
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setActive(item.resource)}
-                                    className="grid w-full text-left gap-4 px-5 py-5 md:grid-cols-[148px_minmax(0,1fr)] hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
-                                >
-                                    <div className={`relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br ${item.accent} p-[1px] min-h-[108px]`}>
-                                        <div className="flex h-full min-h-[106px] items-end justify-between rounded-[11px] bg-white/95 dark:bg-slate-900/90 px-4 py-3">
-                                            <div className="space-y-2">
-                                                <span className="inline-flex w-8 h-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                                                    <Icon size={17} />
-                                                </span>
-                                                <div className="space-y-1">
-                                                    <div className="h-2 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
-                                                    <div className="h-2 w-24 rounded-full bg-slate-100 dark:bg-slate-800" />
-                                                </div>
-                                            </div>
-                                            <div className="grid gap-1 self-start opacity-80">
-                                                <div className="h-10 w-14 rounded-lg bg-slate-100 dark:bg-slate-800" />
-                                                <div className="h-2 w-14 rounded-full bg-slate-200 dark:bg-slate-700" />
-                                                <div className="h-2 w-10 rounded-full bg-slate-100 dark:bg-slate-800" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 text-[12px] mb-2">
-                                            <span className={`inline-flex rounded-full px-2.5 py-1 font-bold uppercase tracking-[0.08em] ${item.sectionTone}`}>
-                                                {item.section}
-                                            </span>
-                                            <span className="text-slate-400 dark:text-slate-500">{item.time}</span>
-                                        </div>
-                                        <h3 className="text-[15px] font-bold text-indigo-800 dark:text-indigo-200 leading-snug">
-                                            {item.title}
-                                        </h3>
-                                        <p className="mt-2 text-[13px] leading-5 text-slate-500 dark:text-slate-400">
-                                            {item.summary}
-                                        </p>
-                                        <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-slate-500 dark:text-slate-400">
-                                            <span className="inline-flex items-center gap-2">
-                                                <UserRound size={14} />
-                                                Editor: {item.author}
-                                            </span>
-                                            {item.published ? (
-                                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                                                    <CheckCircle2 size={14} /> Live
-                                                </span>
+                {/* Left column: recent news + recent projects */}
+                <div className="grid gap-4">
+
+                    {/* Recent news */}
+                    <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl shadow-card overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700/60">
+                            <div className="flex items-center gap-2">
+                                <Newspaper size={13} className="text-slate-400" />
+                                <h2 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">Recent news</h2>
+                            </div>
+                            <button onClick={() => setActive('news')} className="text-[12px] font-medium text-navy-600 dark:text-blue-400 hover:underline">
+                                View all
+                            </button>
+                        </div>
+                        {data.news.length === 0 ? (
+                            <p className="px-4 py-6 text-[13px] text-slate-400 text-center">No news posts yet.</p>
+                        ) : (
+                            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                {data.news.map((item, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setActive('news')}
+                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                                    >
+                                        {/* Thumbnail */}
+                                        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                                            {item.image ? (
+                                                <img src={item.image} alt="" className="w-full h-full object-cover" />
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 text-amber-500 dark:text-amber-300">
-                                                    <XCircle size={14} /> Draft
-                                                </span>
+                                                <Newspaper size={14} className="text-slate-400" />
                                             )}
                                         </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </section>
-
-                <div className="grid gap-4 content-start">
-                    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-violet-700 p-5 text-white shadow-card">
-                        <div className="absolute -right-6 bottom-0 text-white/10">
-                            <LayoutDashboard size={120} strokeWidth={1.2} />
-                        </div>
-                        <div className="relative">
-                            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-indigo-200/80">Shortcuts</span>
-                            <h2 className="mt-1 text-lg font-extrabold">Quick Actions</h2>
-                            <div className="mt-5 grid gap-2.5">
-                                {quickActions.map((action) => {
-                                    const Icon = action.Icon;
-
-                                    return (
-                                        <button
-                                            key={action.label}
-                                            onClick={() => setActive(action.resource)}
-                                            className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-left backdrop-blur-sm transition hover:bg-white/15"
-                                        >
-                                            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                                                <Icon size={18} />
-                                            </span>
-                                            <span className="min-w-0 flex-1">
-                                                <strong className="block text-[13px] font-bold text-white">{action.label}</strong>
-                                                <span className="block text-[11px] text-indigo-100/75">{action.hint}</span>
-                                            </span>
-                                            <ChevronRight size={16} className="shrink-0 text-indigo-100/75" />
-                                        </button>
-                                    );
-                                })}
+                                        {/* Text */}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">{item.title}</p>
+                                            <p className="text-[11px] text-slate-400 mt-0.5">{item.date || '—'}</p>
+                                        </div>
+                                        {/* Badge */}
+                                        {item.published ? (
+                                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Live</span>
+                                        ) : (
+                                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Draft</span>
+                                        )}
+                                    </button>
+                                ))}
                             </div>
-                        </div>
-                    </section>
+                        )}
+                    </div>
 
-                    <section className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-2xl p-5 shadow-card">
-                        <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Publishing readiness</span>
-                        <h2 className="mt-1 text-base font-extrabold text-navy-800 dark:text-slate-100">System Health</h2>
-                        <div className="mt-5 grid gap-4">
-                            {data.health.slice(0, 4).map((check) => (
+                    {/* Recent projects */}
+                    <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl shadow-card overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700/60">
+                            <div className="flex items-center gap-2">
+                                <BriefcaseBusiness size={13} className="text-slate-400" />
+                                <h2 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">Recent projects</h2>
+                            </div>
+                            <button onClick={() => setActive('projects')} className="text-[12px] font-medium text-navy-600 dark:text-blue-400 hover:underline">
+                                View all
+                            </button>
+                        </div>
+                        {data.projects.length === 0 ? (
+                            <p className="px-4 py-6 text-[13px] text-slate-400 text-center">No projects yet.</p>
+                        ) : (
+                            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                {data.projects.map((p, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setActive('projects')}
+                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                                    >
+                                        {/* Thumbnail */}
+                                        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                                            {p.image ? (
+                                                <img src={p.image} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <BriefcaseBusiness size={14} className="text-slate-400" />
+                                            )}
+                                        </div>
+                                        {/* Text */}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">{p.title}</p>
+                                            <p className="text-[11px] text-slate-400 mt-0.5">{p.client} · {p.status}</p>
+                                        </div>
+                                        {/* Badge */}
+                                        {p.published ? (
+                                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Live</span>
+                                        ) : (
+                                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Draft</span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right column: quick actions + health */}
+                <div className="grid gap-4 content-start">
+
+                    {/* Quick actions */}
+                    <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl shadow-card overflow-hidden">
+                        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/60">
+                            <h2 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">Quick actions</h2>
+                        </div>
+                        <div className="p-2">
+                            {quickActions.map((action) => {
+                                const Icon = action.Icon;
+                                return (
+                                    <button
+                                        key={action.resource}
+                                        onClick={() => setActive(action.resource)}
+                                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors"
+                                    >
+                                        <span className="w-7 h-7 shrink-0 rounded-md bg-navy-600/8 dark:bg-white/8 flex items-center justify-center text-navy-600 dark:text-blue-400">
+                                            <Icon size={13} />
+                                        </span>
+                                        <span className="min-w-0">
+                                            <strong className="block text-[13px] font-medium text-slate-700 dark:text-slate-200">{action.label}</strong>
+                                            <span className="text-[11px] text-slate-400 dark:text-slate-500">{action.hint}</span>
+                                        </span>
+                                        <ChevronRight size={13} className="shrink-0 text-slate-300 dark:text-slate-600 ml-auto" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Content health */}
+                    <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl shadow-card overflow-hidden">
+                        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/60">
+                            <h2 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">Content health</h2>
+                        </div>
+                        <div className="p-4 grid gap-3">
+                            {data.health.map((check) => (
                                 <button
                                     key={check.label}
                                     onClick={() => setActive(check.resource)}
-                                    className="flex items-start gap-3 text-left"
+                                    className="flex items-center justify-between gap-3 w-full text-left"
                                 >
-                                    <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${healthTone(check.percent)}`} />
-                                    <span className="min-w-0">
-                                        <strong className="block text-sm font-bold text-slate-800 dark:text-slate-200">
-                                            {check.label}
-                                        </strong>
-                                        <span className="mt-0.5 block text-[13px] leading-5 text-slate-500 dark:text-slate-400">
-                                            {check.percent >= 100 ? `Ready: ${check.value} of ${check.target} target items published.` : `${check.value} of ${check.target} target items published.`}
-                                        </span>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${healthTone(check.percent)}`} />
+                                        <span className="text-[12px] font-medium text-slate-600 dark:text-slate-300 truncate">{check.label}</span>
+                                    </div>
+                                    <span className={`text-[11px] font-semibold tabular-nums shrink-0 ${healthText(check.percent)}`}>
+                                        {check.value}/{check.target}
                                     </span>
                                 </button>
                             ))}
                         </div>
-                    </section>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1275,15 +1287,26 @@ function FieldInput({
         );
     }
 
+    if (field.type === 'datetime') {
+        // Backend returns ISO 8601 (e.g. "2026-06-04T14:30:00.000000Z") or MySQL format
+        // datetime-local input requires exactly "YYYY-MM-DDTHH:MM" (16 chars, no timezone)
+        const formatted = value
+            ? String(value).replace(' ', 'T').slice(0, 16)
+            : '';
+        return (
+            <input
+                type="datetime-local"
+                value={formatted}
+                required={field.required}
+                onChange={(e) => onChange(e.target.value)}
+                className={inputCls}
+            />
+        );
+    }
+
     return (
         <input
-            type={
-                field.type === 'number'
-                    ? 'number'
-                    : field.type === 'datetime'
-                    ? 'datetime-local'
-                    : 'text'
-            }
+            type={field.type === 'number' ? 'number' : 'text'}
             value={value ?? ''}
             required={field.required}
             onChange={(e) => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
@@ -1377,18 +1400,18 @@ function RecordForm({
             onSubmit={(e) => { e.preventDefault(); onSave(draft); }}
         >
             {/* Form header with inline status chips */}
-            <div className="flex items-center justify-between gap-4">
-                <span className="text-navy-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-widest">
-                    {isNew ? 'New record' : `Record #${draft.id}`}
+            <div className="flex items-center justify-between gap-4 pb-1">
+                <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                    {isNew ? 'New record' : `ID ${draft.id}`}
                 </span>
                 {booleanFields.length > 0 && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         {booleanFields.map((field) => {
                             const val = Boolean(getNested(draft, field.name));
                             const c = boolColor(field.name, val);
                             return (
                                 <div key={field.name} className="flex items-center gap-1.5">
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${val ? c.dot : 'bg-slate-300 dark:bg-slate-600'}`} />
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${val ? c.dot : 'bg-slate-200 dark:bg-slate-600'}`} />
                                     <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
                                         {field.label}
                                     </span>
@@ -1407,9 +1430,9 @@ function RecordForm({
                         key={field.name}
                         className={`flex flex-col gap-1.5 ${wideFieldTypes.includes(field.type) ? 'col-span-2' : ''}`}
                     >
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        <span className="text-[12px] font-medium text-slate-600 dark:text-slate-400">
                             {field.label}
-                            {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                            {field.required && <span className="text-red-400 ml-0.5">*</span>}
                         </span>
                         <FieldInput
                             field={field}
@@ -1543,8 +1566,8 @@ function ResourceManager({ resource }: { resource: string }) {
             {/* Page header */}
             <div className="flex items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-navy-800 dark:text-slate-100">{config.title}</h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{config.description}</p>
+                    <h1 className="text-[17px] font-bold text-slate-900 dark:text-slate-100">{config.title}</h1>
+                    <p className="mt-0.5 text-[13px] text-slate-400 dark:text-slate-500">{config.description}</p>
                 </div>
             </div>
 
@@ -1702,9 +1725,8 @@ function UserManager() {
         <div className="grid gap-5">
             <div className="flex items-end justify-between gap-4">
                 <div>
-                    <span className="text-navy-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-widest">Administration</span>
-                    <h1 className="mt-0.5 text-2xl font-extrabold text-navy-800 dark:text-slate-100">Users</h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage administrator accounts with access to this CMS.</p>
+                    <h1 className="text-[17px] font-bold text-slate-900 dark:text-slate-100">Users</h1>
+                    <p className="mt-0.5 text-[13px] text-slate-400 dark:text-slate-500">Manage accounts with access to this CMS.</p>
                 </div>
                 <button
                     onClick={() => setEditing({ id: 0, name: '', email: '', is_admin: true })}
@@ -1735,13 +1757,13 @@ function UserManager() {
                                         <strong className="block text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{u.name}</strong>
                                         <span className="text-xs text-slate-400 dark:text-slate-500 truncate block">{u.email}</span>
                                     </div>
-                                    {u.is_admin ? (
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-navy-600/10 text-navy-700 shrink-0">
+                                    {(u.role === 'admin' || u.is_admin) ? (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-navy-600/10 text-navy-700 dark:bg-navy-900/40 dark:text-blue-300 shrink-0">
                                             Admin
                                         </span>
                                     ) : (
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
-                                            User
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 shrink-0">
+                                            Editor
                                         </span>
                                     )}
                                 </button>
@@ -1786,7 +1808,7 @@ function UserForm({
     const [name, setName] = useState(user.name);
     const [email, setEmail] = useState(user.email);
     const [password, setPassword] = useState('');
-    const [isAdmin, setIsAdmin] = useState(user.is_admin);
+    const [role, setRole] = useState<string>(user.role ?? (user.is_admin ? 'admin' : 'editor'));
     const [deleting, setDeleting] = useState(false);
     const isNew = !user.id;
 
@@ -1794,7 +1816,7 @@ function UserForm({
         setName(user.name);
         setEmail(user.email);
         setPassword('');
-        setIsAdmin(user.is_admin);
+        setRole(user.role ?? (user.is_admin ? 'admin' : 'editor'));
     }, [user]);
 
     async function handleDelete() {
@@ -1808,15 +1830,13 @@ function UserForm({
             className="flex flex-col gap-5"
             onSubmit={(e) => {
                 e.preventDefault();
-                onSave({ id: user.id, name, email, password: password || undefined, is_admin: isAdmin });
+                onSave({ id: user.id, name, email, password: password || undefined, role });
             }}
         >
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <span className="text-navy-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-widest">
-                        {isNew ? 'New user' : `User #${user.id}`}
-                    </span>
-                    <h2 className="mt-0.5 text-lg font-extrabold text-navy-800 dark:text-slate-100">
+                    <p className="text-[11px] font-medium text-slate-400">{isNew ? 'New user' : `ID ${user.id}`}</p>
+                    <h2 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">
                         {isNew ? 'Create account' : user.name}
                     </h2>
                 </div>
@@ -1844,17 +1864,17 @@ function UserForm({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <label className="flex flex-col gap-1.5">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Name <span className="text-red-500">*</span></span>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[12px] font-medium text-slate-500 dark:text-slate-400">Name <span className="text-red-400">*</span></span>
                     <input value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} />
                 </label>
-                <label className="flex flex-col gap-1.5">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email <span className="text-red-500">*</span></span>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[12px] font-medium text-slate-500 dark:text-slate-400">Email <span className="text-red-400">*</span></span>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} />
                 </label>
-                <label className="flex flex-col gap-1.5 col-span-2">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        {isNew ? 'Password *' : 'New password (leave blank to keep current)'}
+                <label className="flex flex-col gap-1 col-span-2">
+                    <span className="text-[12px] font-medium text-slate-500 dark:text-slate-400">
+                        {isNew ? 'Password *' : 'New password — leave blank to keep current'}
                     </span>
                     <input
                         type="password"
@@ -1866,12 +1886,250 @@ function UserForm({
                         className={inputCls}
                     />
                 </label>
-                <label className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Administrator</span>
-                    <Toggle checked={isAdmin} onChange={setIsAdmin} />
+                <label className="flex flex-col gap-1">
+                    <span className="text-[12px] font-medium text-slate-500 dark:text-slate-400">Role <span className="text-red-400">*</span></span>
+                    <select value={role} onChange={(e) => setRole(e.target.value)} required className={inputCls}>
+                        <option value="admin">Admin — full access, can manage users</option>
+                        <option value="editor">Editor — can create and edit content only</option>
+                    </select>
                 </label>
             </div>
         </form>
+    );
+}
+
+// ─────────────────────────────────────────────────────────
+// Settings Manager (structured form instead of raw key-value)
+// ─────────────────────────────────────────────────────────
+
+type SettingRecord = { id: number; key: string; value: { en?: string; sw?: string } | null };
+
+const SETTING_GROUPS: { label: string; icon: React.ElementType; fields: { key: string; label: string; hint?: string; type?: 'text' | 'url' | 'textarea' }[] }[] = [
+    {
+        label: 'Contact Information',
+        icon: Phone,
+        fields: [
+            { key: 'phone',   label: 'Phone number',   hint: 'Displayed in header and contact page' },
+            { key: 'email',   label: 'Email address',  hint: 'Public contact email' },
+            { key: 'address', label: 'Office address',  type: 'textarea', hint: 'Full postal address' },
+            { key: 'website', label: 'Website URL',     type: 'url' },
+        ],
+    },
+    {
+        label: 'Social Media',
+        icon: Share2,
+        fields: [
+            { key: 'social_facebook',  label: 'Facebook URL',  type: 'url' },
+            { key: 'social_twitter',   label: 'Twitter / X URL', type: 'url' },
+            { key: 'social_linkedin',  label: 'LinkedIn URL',  type: 'url' },
+            { key: 'social_youtube',   label: 'YouTube URL',   type: 'url' },
+            { key: 'social_instagram', label: 'Instagram URL', type: 'url' },
+        ],
+    },
+    {
+        label: 'Homepage Hero',
+        icon: Globe,
+        fields: [
+            { key: 'hero_headline',  label: 'Hero headline (EN)',  hint: 'Main banner title in English' },
+            { key: 'hero_headline_sw', label: 'Hero headline (SW)', hint: 'Main banner title in Swahili' },
+            { key: 'hero_subtext',   label: 'Hero subtext (EN)',   type: 'textarea' },
+            { key: 'hero_subtext_sw', label: 'Hero subtext (SW)',  type: 'textarea' },
+            { key: 'hero_cta_label', label: 'CTA button label (EN)' },
+            { key: 'hero_cta_label_sw', label: 'CTA button label (SW)' },
+            { key: 'hero_cta_link',  label: 'CTA button link',     type: 'url' },
+        ],
+    },
+];
+
+function SettingsField({
+    field,
+    value,
+    onChange,
+}: {
+    field: { key: string; label: string; hint?: string; type?: 'text' | 'url' | 'textarea' };
+    value: string;
+    onChange: (v: string) => void;
+}) {
+    return (
+        <label className="flex flex-col gap-1">
+            <span className="text-[12px] font-medium text-slate-500 dark:text-slate-400">{field.label}</span>
+            {field.type === 'textarea' ? (
+                <textarea
+                    rows={3}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className={inputCls}
+                />
+            ) : (
+                <input
+                    type={field.type === 'url' ? 'url' : 'text'}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={field.type === 'url' ? 'https://' : ''}
+                    className={inputCls}
+                />
+            )}
+            {field.hint && <span className="text-[11px] text-slate-400 dark:text-slate-500">{field.hint}</span>}
+        </label>
+    );
+}
+
+function SettingsManager() {
+    const { show } = useToast();
+    const [records, setRecords] = useState<SettingRecord[]>([]);
+    const [draft, setDraft] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
+
+    async function load() {
+        setLoading(true);
+        try {
+            const data = await api('/api/admin/resources/settings?per_page=100');
+            const list: SettingRecord[] = data.items.data;
+            setRecords(list);
+            const flat: Record<string, string> = {};
+            list.forEach((r) => { flat[r.key] = r.value?.en ?? ''; });
+            setDraft(flat);
+        } catch {
+            show('error', 'Failed to load settings.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => { load(); }, []);
+
+    function set(key: string, value: string) {
+        setDraft((d) => ({ ...d, [key]: value }));
+    }
+
+    async function save() {
+        setSaving(true);
+        try {
+            const allKeys = SETTING_GROUPS.flatMap((g) => g.fields.map((f) => f.key));
+            for (const key of allKeys) {
+                const value = draft[key] ?? '';
+                const existing = records.find((r) => r.key === key);
+                if (existing) {
+                    await api(`/api/admin/resources/settings/${existing.id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ key, value: { en: value, sw: value } }),
+                    });
+                } else if (value) {
+                    await api('/api/admin/resources/settings', {
+                        method: 'POST',
+                        body: JSON.stringify({ key, value: { en: value, sw: value } }),
+                    });
+                }
+            }
+            show('success', 'Settings saved.');
+            await load();
+        } catch {
+            show('error', 'Failed to save settings.');
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-40 text-slate-400">
+                <Spinner /> <span className="ml-3">Loading settings…</span>
+            </div>
+        );
+    }
+
+    const group = SETTING_GROUPS[activeTab];
+
+    return (
+        <div className="grid gap-4">
+            {/* Page header + save */}
+            <div className="flex items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-[17px] font-bold text-slate-900 dark:text-slate-100">Site Settings</h1>
+                    <p className="mt-0.5 text-[13px] text-slate-400 dark:text-slate-500">Contact info, social links, and homepage content.</p>
+                </div>
+                <button
+                    type="button"
+                    disabled={saving}
+                    onClick={save}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 shrink-0"
+                >
+                    <Save size={14} />
+                    {saving ? 'Saving…' : 'Save changes'}
+                </button>
+            </div>
+
+            {/* Tab + content layout */}
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+
+                {/* Tab sidebar */}
+                <nav className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-2 shadow-card flex flex-col gap-0.5">
+                    {SETTING_GROUPS.map((g, i) => {
+                        const Icon = g.icon;
+                        const active = activeTab === i;
+                        return (
+                            <button
+                                key={g.label}
+                                onClick={() => setActiveTab(i)}
+                                className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-left text-[13px] font-medium transition-colors border-0 cursor-pointer ${
+                                    active
+                                        ? 'bg-navy-600/8 dark:bg-white/8 text-navy-700 dark:text-white'
+                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                            >
+                                <Icon size={14} className="shrink-0" />
+                                {g.label}
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* Content panel */}
+                <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl shadow-card overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700">
+                        <h2 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">{group.label}</h2>
+                    </div>
+                    <div className="p-5">
+                        {activeTab === 0 && (
+                            <div className="grid gap-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <SettingsField field={group.fields[0]} value={draft[group.fields[0].key] ?? ''} onChange={(v) => set(group.fields[0].key, v)} />
+                                    <SettingsField field={group.fields[1]} value={draft[group.fields[1].key] ?? ''} onChange={(v) => set(group.fields[1].key, v)} />
+                                </div>
+                                <SettingsField field={group.fields[2]} value={draft[group.fields[2].key] ?? ''} onChange={(v) => set(group.fields[2].key, v)} />
+                                <SettingsField field={group.fields[3]} value={draft[group.fields[3].key] ?? ''} onChange={(v) => set(group.fields[3].key, v)} />
+                            </div>
+                        )}
+                        {activeTab === 1 && (
+                            <div className="grid grid-cols-2 gap-4">
+                                {group.fields.map((field) => (
+                                    <SettingsField key={field.key} field={field} value={draft[field.key] ?? ''} onChange={(v) => set(field.key, v)} />
+                                ))}
+                            </div>
+                        )}
+                        {activeTab === 2 && (
+                            <div className="grid gap-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <SettingsField field={group.fields[0]} value={draft[group.fields[0].key] ?? ''} onChange={(v) => set(group.fields[0].key, v)} />
+                                    <SettingsField field={group.fields[1]} value={draft[group.fields[1].key] ?? ''} onChange={(v) => set(group.fields[1].key, v)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <SettingsField field={group.fields[2]} value={draft[group.fields[2].key] ?? ''} onChange={(v) => set(group.fields[2].key, v)} />
+                                    <SettingsField field={group.fields[3]} value={draft[group.fields[3].key] ?? ''} onChange={(v) => set(group.fields[3].key, v)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <SettingsField field={group.fields[4]} value={draft[group.fields[4].key] ?? ''} onChange={(v) => set(group.fields[4].key, v)} />
+                                    <SettingsField field={group.fields[5]} value={draft[group.fields[5].key] ?? ''} onChange={(v) => set(group.fields[5].key, v)} />
+                                </div>
+                                <SettingsField field={group.fields[6]} value={draft[group.fields[6].key] ?? ''} onChange={(v) => set(group.fields[6].key, v)} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -1949,7 +2207,7 @@ function AdminApp() {
                             >
                                 <PanelLeft size={18} />
                             </button>
-                            <h1 className="text-[17px] font-extrabold text-navy-800 dark:text-slate-100 leading-tight">{pageTitle}</h1>
+                            <h1 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100 leading-tight">{pageTitle}</h1>
                         </div>
                         <div className="flex items-center gap-2">
                             <a
@@ -1976,8 +2234,9 @@ function AdminApp() {
                     {/* Scrollable content */}
                     <main className="flex-1 overflow-y-auto p-6 dark:bg-slate-950">
                         {active === 'dashboard' && <DashboardShowcase setActive={setActive} />}
-                        {active === 'users' && <UserManager />}
-                        {active !== 'dashboard' && active !== 'users' && <ResourceManager resource={active} />}
+                        {active === 'users' && user?.role === 'admin' && <UserManager />}
+                        {active === 'settings' && <SettingsManager />}
+                        {active !== 'dashboard' && active !== 'users' && active !== 'settings' && <ResourceManager resource={active} />}
                     </main>
                 </div>
             </div>

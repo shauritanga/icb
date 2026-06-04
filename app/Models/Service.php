@@ -19,6 +19,9 @@ class Service extends Model
         'sort_order',
         'is_featured',
         'is_published',
+        'meta_title',
+        'meta_description',
+        'og_image_path',
     ];
 
     protected function casts(): array
@@ -27,6 +30,8 @@ class Service extends Model
             'title' => 'array',
             'summary' => 'array',
             'body' => 'array',
+            'meta_title' => 'array',
+            'meta_description' => 'array',
             'is_featured' => 'boolean',
             'is_published' => 'boolean',
         ];

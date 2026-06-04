@@ -22,6 +22,9 @@ class Project extends Model
         'gallery_images',
         'is_featured',
         'is_published',
+        'meta_title',
+        'meta_description',
+        'og_image_path',
     ];
 
     protected function casts(): array
@@ -30,6 +33,8 @@ class Project extends Model
             'title' => 'array',
             'description' => 'array',
             'gallery_images' => 'array',
+            'meta_title' => 'array',
+            'meta_description' => 'array',
             'is_featured' => 'boolean',
             'is_published' => 'boolean',
         ];

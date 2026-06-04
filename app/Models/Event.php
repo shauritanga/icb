@@ -3,21 +3,22 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasLocalizedFields;
-use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Model;
 
-class NewsPost extends Model
+class Event extends Model
 {
     use HasLocalizedFields;
 
     protected $fillable = [
         'slug',
         'title',
-        'excerpt',
-        'body',
+        'description',
+        'location',
+        'event_date',
+        'event_end_date',
+        'registration_link',
         'image_path',
         'gallery_images',
-        'published_at',
         'is_published',
         'meta_title',
         'meta_description',
@@ -28,25 +29,13 @@ class NewsPost extends Model
     {
         return [
             'title' => 'array',
-            'excerpt' => 'array',
-            'body' => 'array',
+            'description' => 'array',
             'gallery_images' => 'array',
             'meta_title' => 'array',
             'meta_description' => 'array',
-            'published_at' => 'datetime',
+            'event_date' => 'datetime',
+            'event_end_date' => 'datetime',
             'is_published' => 'boolean',
         ];
-    }
-
-    public function setBodyAttribute($value): void
-    {
-        $this->attributes['body'] = json_encode($this->sanitizeLocalizedHtml($value));
-    }
-
-    private function sanitizeLocalizedHtml($value): array
-    {
-        return collect(is_array($value) ? $value : ['en' => $value])
-            ->map(fn ($item) => is_string($item) ? HtmlSanitizer::richText($item) : '')
-            ->all();
     }
 }

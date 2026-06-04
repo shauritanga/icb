@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Models\Event;
 use App\Models\GalleryItem;
 use App\Models\NewsPost;
 use App\Models\Page;
@@ -88,6 +89,7 @@ class AdminApiController extends Controller
             'search' => 'name',
             'fields' => [
                 ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+                ['name' => 'slug', 'label' => 'Slug (URL — e.g. fimbombaya)', 'type' => 'text'],
                 ['name' => 'position.en', 'label' => 'Position EN', 'type' => 'text', 'required' => true],
                 ['name' => 'position.sw', 'label' => 'Position SW', 'type' => 'text'],
                 ['name' => 'profession', 'label' => 'Profession', 'type' => 'text'],
@@ -111,7 +113,8 @@ class AdminApiController extends Controller
                 ['name' => 'excerpt.sw', 'label' => 'Excerpt SW', 'type' => 'textarea'],
                 ['name' => 'body.en', 'label' => 'Body EN', 'type' => 'richtext', 'required' => true],
                 ['name' => 'body.sw', 'label' => 'Body SW', 'type' => 'richtext'],
-                ['name' => 'image_path', 'label' => 'Image', 'type' => 'image'],
+                ['name' => 'image_path', 'label' => 'Featured Image', 'type' => 'image'],
+                ['name' => 'gallery_images', 'label' => 'Gallery Images', 'type' => 'images'],
                 ['name' => 'published_at', 'label' => 'Published at', 'type' => 'datetime'],
                 ['name' => 'is_published', 'label' => 'Published', 'type' => 'boolean'],
             ],
@@ -143,6 +146,26 @@ class AdminApiController extends Controller
                 ['name' => 'description.sw', 'label' => 'Description SW', 'type' => 'textarea'],
                 ['name' => 'file_path', 'label' => 'File', 'type' => 'file', 'required' => true],
                 ['name' => 'sort_order', 'label' => 'Sort order', 'type' => 'number'],
+                ['name' => 'is_published', 'label' => 'Published', 'type' => 'boolean'],
+            ],
+        ],
+        'events' => [
+            'model' => Event::class,
+            'title' => 'Events',
+            'description' => 'Manage bureau events, workshops, and public engagements.',
+            'search' => 'slug',
+            'fields' => [
+                ['name' => 'slug', 'label' => 'Slug', 'type' => 'text', 'required' => true],
+                ['name' => 'title.en', 'label' => 'Title EN', 'type' => 'text', 'required' => true],
+                ['name' => 'title.sw', 'label' => 'Title SW', 'type' => 'text'],
+                ['name' => 'description.en', 'label' => 'Description EN', 'type' => 'richtext'],
+                ['name' => 'description.sw', 'label' => 'Description SW', 'type' => 'richtext'],
+                ['name' => 'location', 'label' => 'Location', 'type' => 'text'],
+                ['name' => 'event_date', 'label' => 'Event date', 'type' => 'datetime'],
+                ['name' => 'event_end_date', 'label' => 'End date (optional)', 'type' => 'datetime'],
+                ['name' => 'registration_link', 'label' => 'Registration link', 'type' => 'text'],
+                ['name' => 'image_path', 'label' => 'Featured Image', 'type' => 'image'],
+                ['name' => 'gallery_images', 'label' => 'Gallery Images', 'type' => 'images'],
                 ['name' => 'is_published', 'label' => 'Published', 'type' => 'boolean'],
             ],
         ],
@@ -239,6 +262,7 @@ class AdminApiController extends Controller
                 ['label' => 'Staff profiles', 'value' => StaffMember::where('is_published', true)->count(), 'meta' => 'Public team records', 'resource' => 'staff'],
                 ['label' => 'News posts', 'value' => NewsPost::where('is_published', true)->count(), 'meta' => 'Published updates', 'resource' => 'news'],
                 ['label' => 'Documents', 'value' => Document::where('is_published', true)->count(), 'meta' => 'Public downloads', 'resource' => 'documents'],
+                ['label' => 'Events', 'value' => Event::where('is_published', true)->count(), 'meta' => 'Upcoming & past', 'resource' => 'events'],
             ],
             'health' => [
                 $this->health('Core pages', Page::where('is_published', true)->count(), 2, 'pages'),
@@ -248,17 +272,20 @@ class AdminApiController extends Controller
                 $this->health('News updates', NewsPost::where('is_published', true)->count(), 1, 'news'),
                 $this->health('Gallery images', GalleryItem::where('is_published', true)->count(), 3, 'gallery'),
                 $this->health('Documents', Document::where('is_published', true)->count(), 1, 'documents'),
+                $this->health('Events', Event::where('is_published', true)->count(), 1, 'events'),
             ],
             'projects' => Project::latest()->take(5)->get()->map(fn (Project $project) => [
                 'title' => $project->localized('title'),
                 'client' => $project->client_name ?: 'Not specified',
                 'status' => $project->status ?: 'Draft',
                 'published' => $project->is_published,
+                'image' => $this->resolveImageUrl($project->image_path),
             ]),
             'news' => NewsPost::latest('published_at')->take(5)->get()->map(fn (NewsPost $post) => [
                 'title' => $post->localized('title'),
                 'date' => $post->published_at?->format('M d, Y') ?: 'Draft',
                 'published' => $post->is_published,
+                'image' => $this->resolveImageUrl($post->image_path),
             ]),
         ]);
     }
@@ -285,6 +312,8 @@ class AdminApiController extends Controller
 
     public function users(Request $request): JsonResponse
     {
+        $this->requireAdminRole($request);
+
         $query = User::query()->latest();
 
         if ($search = $request->query('search')) {
@@ -301,18 +330,21 @@ class AdminApiController extends Controller
 
     public function storeUser(Request $request): JsonResponse
     {
+        $this->requireAdminRole($request);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'is_admin' => ['boolean'],
+            'role' => ['required', 'string', 'in:admin,editor'],
         ]);
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'is_admin' => $data['is_admin'] ?? false,
+            'role' => $data['role'],
+            'is_admin' => $data['role'] === 'admin',
         ]);
 
         Log::channel('security')->notice('Admin created user.', [
@@ -327,18 +359,21 @@ class AdminApiController extends Controller
 
     public function updateUser(Request $request, int $id): JsonResponse
     {
+        $this->requireAdminRole($request);
+
         $user = User::findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email,'.$id],
             'password' => ['nullable', 'string', 'min:8'],
-            'is_admin' => ['boolean'],
+            'role' => ['required', 'string', 'in:admin,editor'],
         ]);
 
         $user->name = $data['name'];
         $user->email = $data['email'];
-        $user->is_admin = $data['is_admin'] ?? $user->is_admin;
+        $user->role = $data['role'];
+        $user->is_admin = $data['role'] === 'admin';
 
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
@@ -357,6 +392,8 @@ class AdminApiController extends Controller
 
     public function destroyUser(Request $request, int $id): JsonResponse
     {
+        $this->requireAdminRole($request);
+
         $user = User::findOrFail($id);
 
         if ($user->id === $request->user()?->id) {
@@ -418,7 +455,7 @@ class AdminApiController extends Controller
     public function update(Request $request, string $resource, int $id): JsonResponse
     {
         $config = $this->resource($resource);
-        $this->validatePayload($request, $config);
+        $this->validatePayload($request, $config, $id);
         $model = $config['model']::findOrFail($id);
         $model->fill($this->payload($request, $config));
         $model->save();
@@ -449,7 +486,7 @@ class AdminApiController extends Controller
         return collect($config)->only(['title', 'description', 'fields'])->put('resource', $resource)->all();
     }
 
-    private function validatePayload(Request $request, array $config): void
+    private function validatePayload(Request $request, array $config, ?int $ignoreId = null): void
     {
         $rules = [];
 
@@ -473,7 +510,9 @@ class AdminApiController extends Controller
             };
 
             if ($field['name'] === 'slug') {
-                array_push($fieldRules, 'regex:/^[a-z0-9\-]+$/', 'max:200');
+                $table = (new $config['model'])->getTable();
+                $uniqueRule = "unique:{$table},slug" . ($ignoreId ? ",{$ignoreId}" : '');
+                array_push($fieldRules, 'regex:/^[a-z0-9\-]+$/', 'max:200', $uniqueRule);
             }
 
             $rules[$key] = implode('|', $fieldRules);
@@ -504,6 +543,10 @@ class AdminApiController extends Controller
 
         foreach ($config['fields'] as $field) {
             $raw = data_get($request->all(), $field['name']);
+
+            if ($field['type'] === 'boolean') {
+                $raw = $raw ?? false;
+            }
 
             if ($field['type'] === 'richtext' && is_string($raw)) {
                 $raw = HtmlSanitizer::richText($raw);
@@ -552,12 +595,35 @@ class AdminApiController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'is_admin' => (bool) $user->is_admin,
+            'role' => $user->role ?? ($user->is_admin ? 'admin' : null),
         ];
     }
 
     private function userData(User $user): array
     {
-        return ['name' => $user->name, 'email' => $user->email];
+        return ['name' => $user->name, 'email' => $user->email, 'role' => $user->role ?? ($user->is_admin ? 'admin' : 'editor')];
+    }
+
+    private function resolveImageUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        // Already an absolute URL — use as-is
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return Storage::disk('public')->url($path);
+    }
+
+    private function requireAdminRole(Request $request): void
+    {
+        $user = $request->user();
+        if (! $user?->is_admin && $user?->role !== 'admin') {
+            abort(403, 'Admin role required for this action.');
+        }
     }
 
     private function health(string $label, int $value, int $target, string $resource): array
