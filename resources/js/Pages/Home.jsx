@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link } from '@inertiajs/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowRight,
     Award,
@@ -61,6 +63,144 @@ function ServiceIcon({ name, size = 22 }) {
     return <Icon size={size} />;
 }
 
+// Original 3 static info cards — shown as fallback when no news is published
+function StaticHeroPanel() {
+    return (
+        <div className="grid gap-3.5">
+            <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <Award className="shrink-0 mt-0.5 text-gold-400" size={20} />
+                <div>
+                    <strong className="block text-white font-bold">ERB Registered</strong>
+                    <span className="text-blue-200 text-sm">Registration No. 057</span>
+                </div>
+            </div>
+            <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <ClipboardCheck className="shrink-0 mt-0.5 text-gold-400" size={20} />
+                <div>
+                    <strong className="block text-white font-bold">Established</strong>
+                    <span className="text-blue-200 text-sm">December 2012</span>
+                </div>
+            </div>
+            <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <UsersRound className="shrink-0 mt-0.5 text-gold-400" size={20} />
+                <div>
+                    <strong className="block text-white font-bold">Core teams</strong>
+                    <span className="text-blue-200 text-sm">Engineers, technologists, architects, ICT experts, and quantity surveyors</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Animated news carousel — cycles through the latest bureau news in the hero panel
+function HeroNewsPanel({ news }) {
+    const [current, setCurrent] = useState(0);
+    const [paused, setPaused] = useState(false);
+
+    // Auto-advance via setTimeout so manual navigation always resets the timer cleanly
+    useEffect(() => {
+        if (paused || news.length <= 1) return;
+        const t = setTimeout(() => setCurrent(c => (c + 1) % news.length), 5000);
+        return () => clearTimeout(t);
+    }, [current, paused, news.length]);
+
+    if (!news.length) return <StaticHeroPanel />;
+
+    const post = news[current];
+
+    return (
+        <div
+            className="relative rounded-2xl overflow-hidden bg-white/10 backdrop-blur-sm border border-white/[0.12]"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+        >
+            {/* Header: label + dot navigation */}
+            <div className="flex items-center justify-between px-5 pt-4 pb-3">
+                <span className="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-gold-400">
+                    Latest News
+                </span>
+                {news.length > 1 && (
+                    <div className="flex items-center gap-1.5">
+                        {news.map((_, i) => (
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => { setCurrent(i); }}
+                                aria-label={`Go to news item ${i + 1}`}
+                                className={`rounded-full transition-all duration-300 border-0 cursor-pointer ${
+                                    i === current
+                                        ? 'w-5 h-[5px] bg-gold-400'
+                                        : 'w-[5px] h-[5px] bg-white/25 hover:bg-white/55'
+                                }`}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Animated content */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={current}
+                    initial={{ opacity: 0, x: 28, scale: 0.97 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: -28, scale: 0.97 }}
+                    transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="px-5 pb-6"
+                >
+                    {/* Featured image */}
+                    {post.image && (
+                        <div className="rounded-xl overflow-hidden mb-4 border border-white/10">
+                            <img
+                                src={post.image}
+                                alt=""
+                                className="w-full h-36 object-cover"
+                            />
+                        </div>
+                    )}
+
+                    {/* Date */}
+                    <span className="block text-blue-200/60 text-[0.7rem] font-semibold tracking-wide mb-1">
+                        {post.published_at || 'Bureau update'}
+                    </span>
+
+                    {/* Headline */}
+                    <h3 className="text-white font-extrabold text-[1.05rem] leading-[1.3] line-clamp-2 mb-2.5">
+                        {post.title}
+                    </h3>
+
+                    {/* Excerpt */}
+                    {post.excerpt && (
+                        <p className="text-blue-200/75 text-[0.88rem] leading-[1.6] line-clamp-2 mb-4">
+                            {post.excerpt}
+                        </p>
+                    )}
+
+                    {/* CTA */}
+                    <Link
+                        href={post.url}
+                        className="group inline-flex items-center gap-1.5 text-gold-400 font-extrabold text-sm transition-[gap] duration-200 hover:gap-3"
+                    >
+                        Read update
+                        <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </Link>
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Auto-advance progress bar — resets on each slide change */}
+            {news.length > 1 && (
+                <motion.div
+                    key={`pb-${current}-${paused}`}
+                    className="absolute bottom-0 left-0 h-[2px] bg-gold-400/60"
+                    initial={{ width: '0%' }}
+                    animate={{ width: paused ? undefined : '100%' }}
+                    transition={{ duration: 5, ease: 'linear' }}
+                />
+            )}
+        </div>
+    );
+}
+
 export default function Home({ services = [], projects = [], staff = [], news = [], gallery = [], events = [], settings = {}, locale = 'en' }) {
     const leadershipTestimonials = staff.map((member, index) => ({
         quote: leadershipQuote(member),
@@ -83,20 +223,7 @@ export default function Home({ services = [], projects = [], staff = [], news = 
                             <Link href="/contact" className={btn.secondary}>Contact bureau</Link>
                         </div>
                     </div>
-                    <div className="hero-panel grid gap-3.5">
-                        <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                            <Award className="shrink-0 mt-0.5 text-gold-400" size={20} />
-                            <div><strong className="block text-white font-bold">ERB Registered</strong><span className="text-blue-200 text-sm">Registration No. 057</span></div>
-                        </div>
-                        <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                            <ClipboardCheck className="shrink-0 mt-0.5 text-gold-400" size={20} />
-                            <div><strong className="block text-white font-bold">Established</strong><span className="text-blue-200 text-sm">December 2012</span></div>
-                        </div>
-                        <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                            <UsersRound className="shrink-0 mt-0.5 text-gold-400" size={20} />
-                            <div><strong className="block text-white font-bold">Core teams</strong><span className="text-blue-200 text-sm">Engineers, technologists, architects, ICT experts, and quantity surveyors</span></div>
-                        </div>
-                    </div>
+                    <HeroNewsPanel news={news} />
                 </div>
             </section>
 
