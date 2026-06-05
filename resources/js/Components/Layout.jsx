@@ -54,15 +54,21 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
                 <div className="max-w-[1180px] mx-auto px-4 min-h-10 flex items-center justify-between gap-4 flex-wrap">
                     <span className="inline-flex items-center gap-1.5"><Mail size={13} /> {settings.email}</span>
                     <span className="inline-flex items-center gap-1.5"><Phone size={13} /> {settings.phone}</span>
-                    <span className="ml-auto flex items-center gap-1">
+                    <span className="ml-auto flex items-center gap-1.5">
                         <a
-                            className={`px-2 py-0.5 rounded-full text-blue-200 transition-colors duration-150 hover:text-white ${locale === 'en' ? 'bg-gold-400 !text-navy-900 font-bold' : ''}`}
                             href={langHref('en')}
-                        >EN</a>
+                            title="English"
+                            className={`transition-opacity duration-150 ${locale === 'en' ? 'opacity-100 ring-1 ring-gold-400 p-0.5' : 'opacity-40 hover:opacity-75'}`}
+                        >
+                            <img src="https://flagcdn.com/w40/gb.png" alt="English" className="w-5 h-3 object-cover block" />
+                        </a>
                         <a
-                            className={`px-2 py-0.5 rounded-full text-blue-200 transition-colors duration-150 hover:text-white ${locale === 'sw' ? 'bg-gold-400 !text-navy-900 font-bold' : ''}`}
                             href={langHref('sw')}
-                        >SW</a>
+                            title="Kiswahili"
+                            className={`transition-opacity duration-150 ${locale === 'sw' ? 'opacity-100 ring-1 ring-gold-400 p-0.5' : 'opacity-40 hover:opacity-75'}`}
+                        >
+                            <img src="https://flagcdn.com/w40/tz.png" alt="Kiswahili" className="w-5 h-3 object-cover block" />
+                        </a>
                     </span>
                 </div>
             </div>
