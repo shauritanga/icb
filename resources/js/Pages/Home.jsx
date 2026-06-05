@@ -63,7 +63,7 @@ function ServiceIcon({ name, size = 22 }) {
     return <Icon size={size} />;
 }
 
-// Original 3 static info cards — shown as fallback when no news is published
+// Fallback when no news is published
 function StaticHeroPanel() {
     return (
         <div className="grid gap-3.5">
@@ -92,111 +92,196 @@ function StaticHeroPanel() {
     );
 }
 
-// Animated news carousel — cycles through the latest bureau news in the hero panel
+// Stack config per depth level: front → back
+// No scaling — back cards are same size, just pushed down so their bottom edge peeks below
+const CARD_STACK = [
+    { y: 0,  rotate: 0,  zIndex: 30, bgOpacity: 0.13 }, // front
+    { y: 20, rotate: 2,  zIndex: 20, bgOpacity: 0.08 }, // second — 20px peek below front
+    { y: 36, rotate: -1, zIndex: 10, bgOpacity: 0.05 }, // back   — 36px peek below front
+];
+
+// Stacked-card animated news panel
 function HeroNewsPanel({ news }) {
     const [current, setCurrent] = useState(0);
     const [paused, setPaused] = useState(false);
+    const n = news.length;
+    const stackCount = Math.min(n, 3);
 
-    // Auto-advance via setTimeout so manual navigation always resets the timer cleanly
     useEffect(() => {
-        if (paused || news.length <= 1) return;
-        const t = setTimeout(() => setCurrent(c => (c + 1) % news.length), 5000);
+        if (paused || n <= 1) return;
+        const t = setTimeout(() => setCurrent(c => (c + 1) % n), 5000);
         return () => clearTimeout(t);
-    }, [current, paused, news.length]);
+    }, [current, paused, n]);
 
-    if (!news.length) return <StaticHeroPanel />;
-
-    const post = news[current];
+    if (!n) return <StaticHeroPanel />;
 
     return (
         <div
-            className="relative rounded-2xl overflow-hidden bg-white/10 backdrop-blur-sm border border-white/[0.12]"
+            // paddingBottom makes room for back cards peeking below front card
+            style={{ paddingBottom: stackCount > 2 ? 42 : stackCount > 1 ? 26 : 0 }}
+            className="relative"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
         >
-            {/* Header: label + dot navigation */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-3">
-                <span className="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-gold-400">
-                    Latest News
-                </span>
-                {news.length > 1 && (
-                    <div className="flex items-center gap-1.5">
-                        {news.map((_, i) => (
-                            <button
-                                key={i}
-                                type="button"
-                                onClick={() => { setCurrent(i); }}
-                                aria-label={`Go to news item ${i + 1}`}
-                                className={`rounded-full transition-all duration-300 border-0 cursor-pointer ${
-                                    i === current
-                                        ? 'w-5 h-[5px] bg-gold-400'
-                                        : 'w-[5px] h-[5px] bg-white/25 hover:bg-white/55'
-                                }`}
-                            />
-                        ))}
-                    </div>
-                )}
+            {/*
+              Invisible spacer — same structure as front card, invisible, in normal flow.
+              This sets the container height so absolutely-positioned cards have a reference.
+            */}
+            <div className="invisible pointer-events-none rounded-2xl border border-transparent overflow-hidden" aria-hidden>
+                <div className="flex items-center justify-between px-5 pt-4 pb-3">
+                    <span className="text-[0.68rem]">Latest News</span>
+                    <div className="flex gap-1.5">{news.map((_, i) => <span key={i} className="w-[5px] h-[5px] rounded-full" />)}</div>
+                </div>
+                <div className="px-5 pb-6">
+                    {news[current].image && <div className="w-full h-36 rounded-xl mb-4" />}
+                    <span className="block text-[0.7rem] mb-1">&nbsp;</span>
+                    <p className="text-[1.05rem] leading-[1.3] mb-2.5 line-clamp-2">{news[current].title}</p>
+                    {news[current].excerpt && <p className="text-[0.88rem] leading-[1.6] mb-4 line-clamp-2">{news[current].excerpt}</p>}
+                    <span className="text-sm">Read update</span>
+                </div>
             </div>
 
-            {/* Animated content */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={current}
-                    initial={{ opacity: 0, x: 28, scale: 0.97 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, x: -28, scale: 0.97 }}
-                    transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
-                    className="px-5 pb-6"
-                >
-                    {/* Featured image */}
-                    {post.image && (
-                        <div className="rounded-xl overflow-hidden mb-4 border border-white/10">
-                            <img
-                                src={post.image}
-                                alt=""
-                                className="w-full h-36 object-cover"
-                            />
-                        </div>
-                    )}
+            {/*
+              All news cards, absolutely stacked.
+              key=newsIdx so React keeps the same DOM node for each news item —
+              framer-motion then smoothly animates it between stack positions.
+            */}
+            {news.map((post, newsIdx) => {
+                // stackPos: 0=front, 1=middle, 2=back, ≥3=hidden
+                const stackPos = (newsIdx - current + n) % n;
+                const cfg = CARD_STACK[Math.min(stackPos, 2)];
+                const hidden = stackPos >= stackCount;
+                const isFront = stackPos === 0;
 
-                    {/* Date */}
-                    <span className="block text-blue-200/60 text-[0.7rem] font-semibold tracking-wide mb-1">
-                        {post.published_at || 'Bureau update'}
-                    </span>
-
-                    {/* Headline */}
-                    <h3 className="text-white font-extrabold text-[1.05rem] leading-[1.3] line-clamp-2 mb-2.5">
-                        {post.title}
-                    </h3>
-
-                    {/* Excerpt */}
-                    {post.excerpt && (
-                        <p className="text-blue-200/75 text-[0.88rem] leading-[1.6] line-clamp-2 mb-4">
-                            {post.excerpt}
-                        </p>
-                    )}
-
-                    {/* CTA */}
-                    <Link
-                        href={post.url}
-                        className="group inline-flex items-center gap-1.5 text-gold-400 font-extrabold text-sm transition-[gap] duration-200 hover:gap-3"
+                return (
+                    <motion.div
+                        key={newsIdx}
+                        animate={{
+                            y:       hidden ? 48 : cfg.y,
+                            rotate:  hidden ? 0  : cfg.rotate,
+                            opacity: hidden ? 0  : 1,
+                        }}
+                        transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+                        style={{
+                            position: 'absolute',
+                            top: 0, left: 0, right: 0,
+                            zIndex: hidden ? 0 : cfg.zIndex,
+                        }}
+                        className={`rounded-2xl backdrop-blur-sm border border-white/[0.12] overflow-hidden${isFront ? ' shadow-[0_8px_32px_rgba(0,0,0,0.35)]' : ''}`}
                     >
-                        Read update
-                        <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </Link>
-                </motion.div>
-            </AnimatePresence>
+                        {/* Background tint — each depth level has distinct opacity */}
+                        <div
+                            className="absolute inset-0 pointer-events-none"
+                            style={{ background: `rgba(255,255,255,${cfg.bgOpacity})` }}
+                        />
 
-            {/* Auto-advance progress bar — resets on each slide change */}
-            {news.length > 1 && (
-                <motion.div
-                    key={`pb-${current}-${paused}`}
-                    className="absolute bottom-0 left-0 h-[2px] bg-gold-400/60"
-                    initial={{ width: '0%' }}
-                    animate={{ width: paused ? undefined : '100%' }}
-                    transition={{ duration: 5, ease: 'linear' }}
-                />
-            )}
+                        {/* Header — same structure on ALL cards so heights match; dots invisible on back cards */}
+                        <div className="relative flex items-center justify-between px-5 pt-4 pb-3">
+                            <span className="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-gold-400">
+                                Latest News
+                            </span>
+                            {n > 1 && (
+                                <div className={`flex items-center gap-1.5 ${!isFront ? 'invisible' : ''}`}>
+                                    {news.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onClick={isFront ? () => setCurrent(i) : undefined}
+                                            aria-label={`News item ${i + 1}`}
+                                            className={`rounded-full border-0 cursor-pointer transition-all duration-300 ${
+                                                i === current
+                                                    ? 'w-5 h-[5px] bg-gold-400'
+                                                    : 'w-[5px] h-[5px] bg-white/25 hover:bg-white/55'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/*
+                          Content — IDENTICAL structure on every card so all cards have the same height.
+                          Back cards get a dimming wrapper; only the front card has pointer events.
+                        */}
+                        <div className={`relative px-5 pb-6 ${!isFront ? 'pointer-events-none select-none' : ''}`}>
+                            {/* Dim overlay for back cards */}
+                            {!isFront && (
+                                <div className="absolute inset-0 bg-navy-800/40 z-10 rounded-b-xl" />
+                            )}
+
+                            {isFront ? (
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={current}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.28 }}
+                                    >
+                                        {post.image && (
+                                            <div className="rounded-xl overflow-hidden mb-4 border border-white/10">
+                                                <img src={post.image} alt="" className="w-full h-36 object-cover" />
+                                            </div>
+                                        )}
+                                        <span className="block text-blue-200/60 text-[0.7rem] font-semibold tracking-wide mb-1">
+                                            {post.published_at || 'Bureau update'}
+                                        </span>
+                                        <h3 className="text-white font-extrabold text-[1.05rem] leading-[1.3] line-clamp-2 mb-2.5">
+                                            {post.title}
+                                        </h3>
+                                        {post.excerpt && (
+                                            <p className="text-blue-200/75 text-[0.88rem] leading-[1.6] line-clamp-2 mb-4">
+                                                {post.excerpt}
+                                            </p>
+                                        )}
+                                        <Link
+                                            href={post.url}
+                                            className="group inline-flex items-center gap-1.5 text-gold-400 font-extrabold text-sm transition-[gap] duration-200 hover:gap-3"
+                                        >
+                                            Read update
+                                            <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                                        </Link>
+                                    </motion.div>
+                                </AnimatePresence>
+                            ) : (
+                                /* Same layout as front card — keeps card height identical so y-offset peeks work */
+                                <div>
+                                    {post.image && (
+                                        <div className="rounded-xl overflow-hidden mb-4 border border-white/10">
+                                            <img src={post.image} alt="" className="w-full h-36 object-cover" />
+                                        </div>
+                                    )}
+                                    <span className="block text-blue-200/60 text-[0.7rem] font-semibold tracking-wide mb-1">
+                                        {post.published_at || 'Bureau update'}
+                                    </span>
+                                    <h3 className="text-white font-extrabold text-[1.05rem] leading-[1.3] line-clamp-2 mb-2.5">
+                                        {post.title}
+                                    </h3>
+                                    {post.excerpt && (
+                                        <p className="text-blue-200/75 text-[0.88rem] leading-[1.6] line-clamp-2 mb-4">
+                                            {post.excerpt}
+                                        </p>
+                                    )}
+                                    <span className="inline-flex items-center gap-1.5 text-gold-400 font-extrabold text-sm">
+                                        Read update <ArrowRight size={14} />
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Gold progress bar — only on front */}
+                        {isFront && n > 1 && (
+                            <motion.div
+                                key={`pb-${current}`}
+                                className="absolute bottom-0 left-0 h-[2px] bg-gold-400/70"
+                                initial={{ width: '0%' }}
+                                animate={{ width: paused ? undefined : '100%' }}
+                                transition={{ duration: 5, ease: 'linear' }}
+                            />
+                        )}
+                    </motion.div>
+                );
+            })}
         </div>
     );
 }
