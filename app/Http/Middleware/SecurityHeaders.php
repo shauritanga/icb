@@ -28,6 +28,8 @@ class SecurityHeaders
             array_push($connectSources, 'ws:', 'wss:', ...$viteOrigins);
         }
 
+        $workerSources = ["'self'", 'blob:'];
+
         $csp = implode('; ', [
             "default-src 'self'",
             'base-uri \'self\'',
@@ -37,6 +39,7 @@ class SecurityHeaders
             'font-src \'self\' data: https:',
             'style-src '.implode(' ', $styleSources),
             'script-src '.implode(' ', $scriptSources),
+            'worker-src '.implode(' ', $workerSources),
             'connect-src '.implode(' ', $connectSources),
             "object-src 'none'",
         ]);
