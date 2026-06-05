@@ -68,7 +68,7 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
             </div>
 
             {/* Header */}
-            <header className={`sticky top-0 z-20 bg-white/95 border-b border-border-light backdrop-blur-md transition-shadow duration-[250ms] ${scrolled ? 'shadow-[0_2px_20px_rgba(14,49,90,0.12)] border-transparent' : ''}`}>
+            <header className={`sticky top-0 z-50 bg-white/95 border-b border-border-light backdrop-blur-md transition-shadow duration-[250ms] ${scrolled ? 'shadow-[0_2px_20px_rgba(14,49,90,0.12)] border-transparent' : ''}`}>
                 <div className="max-w-[1180px] mx-auto px-4 min-h-[78px] flex items-center justify-between gap-5">
                     <Link href="/" className="inline-flex items-center gap-3 min-w-0">
                         <img className="w-[54px] h-[54px] object-contain shrink-0" src="/logo.png" alt="DIT ICB logo" />
