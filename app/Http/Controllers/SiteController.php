@@ -213,10 +213,11 @@ class SiteController extends Controller
             'email'    => SiteSetting::value('email',    $locale, 'icb@dit.ac.tz'),
             'address'  => SiteSetting::value('address',  $locale, 'Dar es Salaam Institute of Technology, P.O. Box 2958, Dar es Salaam'),
             'website'  => SiteSetting::value('website',  $locale, 'https://www.dit.ac.tz'),
-            'facebook' => SiteSetting::value('social_facebook',  $locale),
-            'twitter'  => SiteSetting::value('social_twitter',   $locale),
-            'linkedin' => SiteSetting::value('social_linkedin',  $locale),
-            'youtube'  => SiteSetting::value('social_youtube',   $locale),
+            'facebook'  => SiteSetting::value('social_facebook',  $locale),
+            'twitter'   => SiteSetting::value('social_twitter',   $locale),
+            'linkedin'  => SiteSetting::value('social_linkedin',  $locale),
+            'youtube'   => SiteSetting::value('social_youtube',   $locale),
+            'instagram' => SiteSetting::value('social_instagram', $locale),
         ];
     }
 
