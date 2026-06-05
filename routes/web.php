@@ -8,21 +8,31 @@ use Illuminate\Support\Facades\Route;
 Route::get('/admin/{path?}', AdminSpaController::class)->where('path', '.*')->name('admin.spa');
 
 Route::prefix('api/admin')->group(function (): void {
-    Route::post('/login', [AdminApiController::class, 'login'])->middleware(['guest', 'throttle:5,1']);
-    Route::middleware(['auth', 'admin'])->group(function (): void {
+    Route::post('/login', [AdminApiController::class, 'login'])->middleware(['guest', 'throttle:6,15']);
+
+    // Standard admin endpoints — 60 requests per minute per user
+    Route::middleware(['auth', 'admin', 'throttle:60,1'])->group(function (): void {
         Route::post('/logout', [AdminApiController::class, 'logout']);
         Route::get('/me', [AdminApiController::class, 'me']);
         Route::get('/dashboard', [AdminApiController::class, 'dashboard']);
-        Route::post('/upload', [AdminApiController::class, 'upload']);
         Route::get('/users', [AdminApiController::class, 'users']);
+        Route::get('/resources/{resource}', [AdminApiController::class, 'index']);
+        Route::get('/resources/{resource}/{id}', [AdminApiController::class, 'show']);
+    });
+
+    // Write/delete endpoints — 30 requests per minute per user
+    Route::middleware(['auth', 'admin', 'throttle:30,1'])->group(function (): void {
         Route::post('/users', [AdminApiController::class, 'storeUser']);
         Route::put('/users/{id}', [AdminApiController::class, 'updateUser']);
         Route::delete('/users/{id}', [AdminApiController::class, 'destroyUser']);
-        Route::get('/resources/{resource}', [AdminApiController::class, 'index']);
         Route::post('/resources/{resource}', [AdminApiController::class, 'store']);
-        Route::get('/resources/{resource}/{id}', [AdminApiController::class, 'show']);
         Route::put('/resources/{resource}/{id}', [AdminApiController::class, 'update']);
         Route::delete('/resources/{resource}/{id}', [AdminApiController::class, 'destroy']);
+    });
+
+    // File upload — 10 uploads per minute per user
+    Route::middleware(['auth', 'admin', 'throttle:10,1'])->group(function (): void {
+        Route::post('/upload', [AdminApiController::class, 'upload']);
     });
 });
 

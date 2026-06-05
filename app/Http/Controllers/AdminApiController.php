@@ -293,7 +293,7 @@ class AdminApiController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,svg,pdf,doc,docx,xls,xlsx,ppt,pptx,zip'],
+            'file' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip'],
         ]);
 
         $path = $request->file('file')->store('uploads', 'public');
