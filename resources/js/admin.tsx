@@ -688,11 +688,13 @@ function Sidebar({
     setActive,
     onLogout,
     user,
+    onNavigate,
 }: {
     active: string;
     setActive: (v: string) => void;
     onLogout: () => void;
     user: AuthUser;
+    onNavigate?: () => void;
 }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -727,6 +729,7 @@ function Sidebar({
     function goTo(id: string) {
         setActive(id);
         setMenuOpen(false);
+        onNavigate?.();
     }
 
 
@@ -910,7 +913,7 @@ function Dashboard({ setActive }: { setActive: (v: string) => void }) {
             </div>
 
             {/* Health + Recent */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2 bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 shadow-card">
                     <h2 className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 mb-3">Content health</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1424,7 +1427,7 @@ function RecordForm({
             </div>
 
             {/* Content fields (non-boolean) */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
                 {otherFields.map((field) => (
                     <label
                         key={field.name}
@@ -1493,6 +1496,7 @@ function ResourceManager({ resource }: { resource: string }) {
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [mobileView, setMobileView] = useState<'list' | 'form'>('list');
 
     async function load(p = page, s = search) {
         setLoading(true);
@@ -1514,6 +1518,7 @@ function ResourceManager({ resource }: { resource: string }) {
         setSearch('');
         setPage(1);
         setEditing(null);
+        setMobileView('list');
         load(1, '');
     }, [resource]);
 
@@ -1572,9 +1577,9 @@ function ResourceManager({ resource }: { resource: string }) {
             </div>
 
             {/* Two-column layout */}
-            <div className="grid grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] gap-4 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] gap-4 items-start">
                 {/* Record list — sticky so it stays visible while the form scrolls */}
-                <div className="sticky top-0 bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-4 shadow-card">
+                <div className={`sticky top-0 bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-4 shadow-card ${mobileView === 'form' ? 'hidden lg:block' : ''}`}>
                     <div className="flex gap-2 mb-3">
                         <div className="flex flex-1 items-center gap-2 border border-slate-300 dark:border-slate-600 rounded-lg px-3 bg-white dark:bg-slate-700">
                             <Search size={15} className="text-slate-400 shrink-0" />
@@ -1594,7 +1599,7 @@ function ResourceManager({ resource }: { resource: string }) {
                             />
                         </div>
                         <button
-                            onClick={() => setEditing({ id: 0 })}
+                            onClick={() => { setEditing({ id: 0 }); setMobileView('form'); }}
                             className="inline-flex items-center gap-1.5 px-3 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-lg transition-colors shrink-0"
                         >
                             <Plus size={15} /> New
@@ -1612,7 +1617,7 @@ function ResourceManager({ resource }: { resource: string }) {
                                     {items.map((item) => (
                                         <button
                                             key={item.id}
-                                            onClick={() => setEditing(item)}
+                                            onClick={() => { setEditing(item); setMobileView('form'); }}
                                             className={`flex items-center justify-between gap-3 w-full text-left px-3 py-2.5 rounded-lg border transition-colors cursor-pointer ${
                                                 editing?.id === item.id
                                                     ? 'border-navy-600/40 bg-brand-sky dark:bg-navy-900/40'
@@ -1644,7 +1649,13 @@ function ResourceManager({ resource }: { resource: string }) {
                 </div>
 
                 {/* Form panel */}
-                <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 shadow-card">
+                <div className={`bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 shadow-card ${mobileView === 'list' ? 'hidden lg:block' : ''}`}>
+                    <button
+                        onClick={() => setMobileView('list')}
+                        className="lg:hidden inline-flex items-center gap-1.5 mb-3 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-0 cursor-pointer bg-transparent"
+                    >
+                        <ChevronLeft size={16} /> Back to list
+                    </button>
                     {editing ? (
                         <RecordForm
                             config={config}
@@ -1676,6 +1687,7 @@ function UserManager() {
     const [editing, setEditing] = useState<AdminUserRecord | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [mobileView, setMobileView] = useState<'list' | 'form'>('list');
 
     async function load() {
         setLoading(true);
@@ -1729,16 +1741,16 @@ function UserManager() {
                     <p className="mt-0.5 text-[13px] text-slate-400 dark:text-slate-500">Manage accounts with access to this CMS.</p>
                 </div>
                 <button
-                    onClick={() => setEditing({ id: 0, name: '', email: '', is_admin: true })}
+                    onClick={() => { setEditing({ id: 0, name: '', email: '', is_admin: true }); setMobileView('form'); }}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-lg transition-colors shrink-0"
                 >
                     <Plus size={17} /> New user
                 </button>
             </div>
 
-            <div className="grid grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] gap-4 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] gap-4 items-start">
                 {/* User list */}
-                <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-4 shadow-card">
+                <div className={`bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-4 shadow-card ${mobileView === 'form' ? 'hidden lg:block' : ''}`}>
                     {loading ? (
                         <div className="flex justify-center py-8"><Spinner /></div>
                     ) : (
@@ -1746,7 +1758,7 @@ function UserManager() {
                             {users.map((u) => (
                                 <button
                                     key={u.id}
-                                    onClick={() => setEditing(u)}
+                                    onClick={() => { setEditing(u); setMobileView('form'); }}
                                     className={`flex items-center justify-between gap-3 w-full text-left px-3 py-2.5 rounded-lg border transition-colors cursor-pointer ${
                                         editing?.id === u.id
                                             ? 'border-navy-600/40 bg-brand-sky dark:bg-navy-900/40'
@@ -1773,7 +1785,13 @@ function UserManager() {
                 </div>
 
                 {/* User form */}
-                <div className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 shadow-card">
+                <div className={`bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-5 shadow-card ${mobileView === 'list' ? 'hidden lg:block' : ''}`}>
+                    <button
+                        onClick={() => setMobileView('list')}
+                        className="lg:hidden inline-flex items-center gap-1.5 mb-3 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-0 cursor-pointer bg-transparent"
+                    >
+                        <ChevronLeft size={16} /> Back to list
+                    </button>
                     {editing ? (
                         <UserForm
                             user={editing}
@@ -1863,7 +1881,7 @@ function UserForm({
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="flex flex-col gap-1">
                     <span className="text-[12px] font-medium text-slate-500 dark:text-slate-400">Name <span className="text-red-400">*</span></span>
                     <input value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} />
@@ -2062,10 +2080,30 @@ function SettingsManager() {
             </div>
 
             {/* Tab + content layout */}
-            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4 items-start">
 
-                {/* Tab sidebar */}
-                <nav className="bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-2 shadow-card flex flex-col gap-0.5">
+                {/* Mobile horizontal tab bar */}
+                <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
+                    {SETTING_GROUPS.map((g, i) => {
+                        const Icon = g.icon;
+                        return (
+                            <button
+                                key={g.label}
+                                onClick={() => setActiveTab(i)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-medium whitespace-nowrap shrink-0 border-0 cursor-pointer transition-colors ${
+                                    activeTab === i
+                                        ? 'bg-navy-600 text-white'
+                                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                }`}
+                            >
+                                <Icon size={13} />{g.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Tab sidebar — desktop only */}
+                <nav className="hidden lg:flex bg-white dark:bg-slate-800 border border-border-light dark:border-slate-700/50 rounded-xl p-2 shadow-card flex-col gap-0.5">
                     {SETTING_GROUPS.map((g, i) => {
                         const Icon = g.icon;
                         const active = activeTab === i;
@@ -2094,7 +2132,7 @@ function SettingsManager() {
                     <div className="p-5">
                         {activeTab === 0 && (
                             <div className="grid gap-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <SettingsField field={group.fields[0]} value={draft[group.fields[0].key] ?? ''} onChange={(v) => set(group.fields[0].key, v)} />
                                     <SettingsField field={group.fields[1]} value={draft[group.fields[1].key] ?? ''} onChange={(v) => set(group.fields[1].key, v)} />
                                 </div>
@@ -2103,7 +2141,7 @@ function SettingsManager() {
                             </div>
                         )}
                         {activeTab === 1 && (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {group.fields.map((field) => (
                                     <SettingsField key={field.key} field={field} value={draft[field.key] ?? ''} onChange={(v) => set(field.key, v)} />
                                 ))}
@@ -2111,15 +2149,15 @@ function SettingsManager() {
                         )}
                         {activeTab === 2 && (
                             <div className="grid gap-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <SettingsField field={group.fields[0]} value={draft[group.fields[0].key] ?? ''} onChange={(v) => set(group.fields[0].key, v)} />
                                     <SettingsField field={group.fields[1]} value={draft[group.fields[1].key] ?? ''} onChange={(v) => set(group.fields[1].key, v)} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <SettingsField field={group.fields[2]} value={draft[group.fields[2].key] ?? ''} onChange={(v) => set(group.fields[2].key, v)} />
                                     <SettingsField field={group.fields[3]} value={draft[group.fields[3].key] ?? ''} onChange={(v) => set(group.fields[3].key, v)} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <SettingsField field={group.fields[4]} value={draft[group.fields[4].key] ?? ''} onChange={(v) => set(group.fields[4].key, v)} />
                                     <SettingsField field={group.fields[5]} value={draft[group.fields[5].key] ?? ''} onChange={(v) => set(group.fields[5].key, v)} />
                                 </div>
@@ -2142,7 +2180,7 @@ function AdminApp() {
     const [checking, setChecking] = useState(true);
     const [active, setActive] = useState('dashboard');
     const [isDark, setIsDark] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
 
     useEffect(() => {
         const saved = localStorage.getItem('admin-theme');
@@ -2189,9 +2227,24 @@ function AdminApp() {
     return (
         <ToastProvider>
             <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-                {/* Fixed sidebar — width transitions on toggle */}
-                <div className={`shrink-0 h-screen overflow-hidden transition-[width] duration-300 ease-in-out ${sidebarOpen ? 'w-[260px]' : 'w-0'}`}>
-                    <Sidebar active={active} setActive={setActive} onLogout={logout} user={user} />
+                {/* Mobile backdrop */}
+                {sidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                )}
+                {/* Sidebar: fixed overlay on mobile, inline collapse on md+ */}
+                <div className={[
+                    'fixed inset-y-0 left-0 z-50 w-[260px] h-screen overflow-hidden',
+                    'transition-transform duration-300 ease-in-out',
+                    'md:relative md:inset-auto md:z-auto md:translate-x-0',
+                    'md:transition-[width] md:duration-300 md:shrink-0',
+                    sidebarOpen ? 'translate-x-0 md:w-[260px]' : '-translate-x-full md:w-0',
+                ].join(' ')}>
+                    <Sidebar active={active} setActive={setActive} onLogout={logout} user={user}
+                        onNavigate={() => { if (window.innerWidth < 768) setSidebarOpen(false); }}
+                    />
                 </div>
 
                 {/* Main area */}
@@ -2232,7 +2285,7 @@ function AdminApp() {
                     </header>
 
                     {/* Scrollable content */}
-                    <main className="flex-1 overflow-y-auto p-6 dark:bg-slate-950">
+                    <main className="flex-1 overflow-y-auto p-3 md:p-6 dark:bg-slate-950">
                         {active === 'dashboard' && <DashboardShowcase setActive={setActive} />}
                         {active === 'users' && user?.role === 'admin' && <UserManager />}
                         {active === 'settings' && <SettingsManager />}
