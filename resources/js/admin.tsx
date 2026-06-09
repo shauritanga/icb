@@ -622,21 +622,21 @@ function Login({ onLogin }: { onLogin: (user: AuthUser) => void }) {
         'w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-600/40';
 
     return (
-        <main className="min-h-screen grid place-items-center p-6 bg-gradient-to-br from-navy-800 to-navy-600">
-            <section className="w-full max-w-3xl grid grid-cols-[1fr_0.9fr] overflow-hidden rounded-2xl bg-white shadow-[0_30px_80px_rgba(2,20,40,0.28)]">
+        <main className="min-h-screen grid place-items-center p-4 bg-gradient-to-br from-navy-800 to-navy-600">
+            <section className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-[0_30px_80px_rgba(2,20,40,0.28)] grid grid-cols-1 md:grid-cols-[1fr_0.9fr]">
                 {/* Brand panel */}
-                <div className="flex flex-col justify-center gap-5 p-12 bg-slate-50 border-r border-slate-200">
-                    <img src="/logo.png" alt="DIT ICB" className="w-20 h-20 object-contain" />
+                <div className="flex items-center gap-5 p-6 bg-slate-50 border-b border-slate-200 md:flex-col md:items-start md:justify-center md:gap-5 md:p-12 md:border-b-0 md:border-r">
+                    <img src="/logo.png" alt="DIT ICB" className="w-14 h-14 md:w-20 md:h-20 object-contain shrink-0" />
                     <div>
                         <span className="text-navy-600 text-xs font-extrabold uppercase tracking-widest">DIT ICB</span>
-                        <strong className="block mt-2 text-navy-800 text-3xl font-extrabold leading-tight">
+                        <strong className="block mt-1 md:mt-2 text-navy-800 text-xl md:text-3xl font-extrabold leading-tight">
                             Content Management System
                         </strong>
                     </div>
                 </div>
                 {/* Form panel */}
-                <form onSubmit={submit} className="flex flex-col justify-center gap-4 p-10">
-                    <h1 className="text-2xl font-extrabold text-navy-800">Admin sign in</h1>
+                <form onSubmit={submit} className="flex flex-col justify-center gap-4 p-6 md:p-10">
+                    <h1 className="text-xl md:text-2xl font-extrabold text-navy-800">Admin sign in</h1>
                     <p className="text-sm text-slate-500 leading-relaxed -mt-1">
                         Manage bureau content, projects, services, staff profiles, and more.
                     </p>
