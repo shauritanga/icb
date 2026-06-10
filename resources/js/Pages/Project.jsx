@@ -11,13 +11,13 @@ const STATUS_CONFIG = {
     planned:   { dot: 'bg-amber-400', pill: 'bg-amber-50 text-amber-800 border-amber-200' },
 };
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, label }) {
     if (!status) return null;
     const cfg = STATUS_CONFIG[status?.toLowerCase()] ?? { dot: 'bg-slate-400', pill: 'bg-slate-100 text-slate-700 border-slate-200' };
     return (
         <span className={`inline-flex items-center gap-1.5 border font-bold uppercase tracking-[0.07em] text-[0.7rem] px-2.5 py-1 rounded-full ${cfg.pill}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-            {status}
+            {label ?? status}
         </span>
     );
 }
@@ -132,7 +132,7 @@ export default function Project({ project, settings = {}, locale = 'en' }) {
                                         </div>
                                         <div>
                                             <p className="text-[0.65rem] font-bold uppercase tracking-[0.09em] text-slate-400 mb-1.5">{t.project_status ?? 'Status'}</p>
-                                            <StatusBadge status={project.status} />
+                                            <StatusBadge status={project.status} label={t[`status_${project.status}`] ?? project.status} />
                                         </div>
                                     </div>
                                 )}

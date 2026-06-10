@@ -1216,10 +1216,12 @@ function FieldInput({
     field,
     value,
     onChange,
+    activeLang = 'en',
 }: {
     field: Field;
     value: any;
     onChange: (v: any) => void;
+    activeLang?: 'en' | 'sw';
 }) {
     if (field.type === 'boolean') {
         return <Toggle checked={Boolean(value)} onChange={onChange} />;
@@ -1268,10 +1270,12 @@ function FieldInput({
                 onChange={(e) => onChange(e.target.value)}
                 className={inputCls}
             >
-                <option value="">— Select —</option>
+                <option value="">{activeLang === 'sw' ? '— Chagua —' : '— Select —'}</option>
                 {field.options.map((opt) => (
                     <option key={opt} value={opt}>
-                        {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                        {activeLang === 'sw'
+                            ? (SW_SELECT_OPTIONS[opt] ?? opt.charAt(0).toUpperCase() + opt.slice(1))
+                            : opt.charAt(0).toUpperCase() + opt.slice(1)}
                     </option>
                 ))}
             </select>
@@ -1324,6 +1328,43 @@ function FieldInput({
 
 const wideFieldTypes: FieldType[] = ['richtext', 'image', 'file', 'textarea', 'images'];
 
+const SW_FIELD_LABELS: Record<string, string> = {
+    'Title':               'Kichwa',
+    'Description':         'Maelezo',
+    'Summary':             'Muhtasari',
+    'Body':                'Maudhui',
+    'Excerpt':             'Dondoo',
+    'Position':            'Cheo',
+    'Caption':             'Maelezo ya picha',
+    'Meta title':          'Kichwa cha meta',
+    'Meta description':    'Maelezo ya meta',
+    'Client':              'Mteja',
+    'Contract value':      'Thamani ya mkataba',
+    'Project period':      'Kipindi cha mradi',
+    'Status':              'Hali',
+    'Image':               'Picha',
+    'Gallery Images':      'Picha za ukumbi',
+    'Icon':                'Aikoni',
+    'Sort order':          'Mpangilio',
+    'Name':                'Jina',
+    'Profession':          'Taaluma',
+    'Qualification':       'Sifa',
+    'Experience':          'Uzoefu',
+    'Location':            'Mahali',
+    'Registration link':   'Kiungo cha usajili',
+    'Start date':          'Tarehe ya kuanza',
+    'End date':            'Tarehe ya kumaliza',
+    'File':                'Faili',
+    'Featured':            'Iliyoangaziwa',
+    'Published':           'Imechapishwa',
+};
+
+const SW_SELECT_OPTIONS: Record<string, string> = {
+    'ongoing':   'Inaendelea',
+    'completed': 'Imekamilika',
+    'planned':   'Imepangwa',
+};
+
 function RecordForm({
     config,
     item,
@@ -1339,10 +1380,12 @@ function RecordForm({
 }) {
     const [draft, setDraft] = useState<ResourceItem>(item);
     const [deleting, setDeleting] = useState(false);
+    const [activeLang, setActiveLang] = useState<'en' | 'sw'>('en');
     const isNew = !draft.id;
 
     useEffect(() => {
         setDraft(item);
+        setActiveLang('en');
     }, [item]);
 
     function setField(name: string, value: any) {
@@ -1367,8 +1410,17 @@ function RecordForm({
         }
     }
 
-    const booleanFields = config.fields.filter((f) => f.type === 'boolean');
-    const otherFields   = config.fields.filter((f) => f.type !== 'boolean');
+    const booleanFields  = config.fields.filter((f) => f.type === 'boolean');
+    const otherFields    = config.fields.filter((f) => f.type !== 'boolean');
+    const enFields       = otherFields.filter((f) => f.name.endsWith('.en'));
+    const swFields       = otherFields.filter((f) => f.name.endsWith('.sw'));
+    const neutralFields  = otherFields.filter((f) => !f.name.endsWith('.en') && !f.name.endsWith('.sw') && f.name !== 'slug');
+    const visibleFields  = activeLang === 'en' ? [...enFields, ...neutralFields] : [...swFields, ...neutralFields];
+    const hasTranslatable = swFields.length > 0;
+    const displayLabel   = (label: string) => {
+        const stripped = label.replace(/\s+(EN|SW)$/i, '');
+        return activeLang === 'sw' ? (SW_FIELD_LABELS[stripped] ?? stripped) : stripped;
+    };
 
     function boolColor(name: string, active: boolean) {
         if (!active) return {
@@ -1426,28 +1478,59 @@ function RecordForm({
                 )}
             </div>
 
+            {/* Language switcher */}
+            {hasTranslatable && (
+                <div className="rounded-xl border border-border-light bg-slate-50 dark:bg-slate-800/50 p-3">
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                        <Globe size={13} className="text-slate-400 dark:text-slate-500" />
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">Content language</span>
+                    </div>
+                    <div className="flex gap-2">
+                        {([
+                            { lang: 'en', label: 'English',  flag: 'https://flagcdn.com/w40/gb.png' },
+                            { lang: 'sw', label: 'Swahili',  flag: 'https://flagcdn.com/w40/tz.png' },
+                        ] as const).map(({ lang, label, flag }) => (
+                            <button
+                                key={lang}
+                                type="button"
+                                onClick={() => setActiveLang(lang)}
+                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                                    activeLang === lang
+                                        ? 'bg-navy-800 text-white shadow-sm'
+                                        : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 border border-border-light'
+                                }`}
+                            >
+                                <img src={flag} alt={lang.toUpperCase()} className="w-5 h-3 object-cover rounded-sm" />
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    {activeLang === 'sw' && (
+                        <p className="mt-2.5 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                            <Globe size={11} />
+                            Fields are auto-translated from English on save. Edit here to manually override.
+                        </p>
+                    )}
+                </div>
+            )}
+
             {/* Content fields (non-boolean) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
-                {otherFields.map((field) => (
+                {visibleFields.map((field) => (
                     <label
                         key={field.name}
                         className={`flex flex-col gap-1.5 ${wideFieldTypes.includes(field.type) ? 'col-span-2' : ''}`}
                     >
                         <span className="text-[12px] font-medium text-slate-600 dark:text-slate-400">
-                            {field.label}
+                            {displayLabel(field.label)}
                             {field.required && <span className="text-red-400 ml-0.5">*</span>}
                         </span>
                         <FieldInput
                             field={field}
                             value={getNested(draft, field.name)}
                             onChange={(v) => setField(field.name, v)}
+                            activeLang={activeLang}
                         />
-                        {field.name.endsWith('.sw') && (
-                            <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                                <Globe size={11} />
-                                Auto-translated from English on save. Manual edits are overwritten when English changes.
-                            </span>
-                        )}
                     </label>
                 ))}
             </div>

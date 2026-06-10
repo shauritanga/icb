@@ -26,7 +26,7 @@ export default function Projects({ projects = { data: [], links: [] }, settings 
                                 <div className="p-[18px]">
                                     <h2 className="mb-2 text-navy-800 font-extrabold text-[1.1rem] leading-[1.25]">{project.title}</h2>
                                     <p className="text-slate-500 leading-[1.65] text-sm">{project.client_name}</p>
-                                    <span className="block text-slate-400 text-[0.85rem] mt-1">{project.status}</span>
+                                    <span className="block text-slate-400 text-[0.85rem] mt-1">{t[`status_${project.status}`] ?? project.status}</span>
                                 </div>
                             </Link>
                         ))}

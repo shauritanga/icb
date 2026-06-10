@@ -349,7 +349,7 @@ export default function Home({ services = [], projects = [], staff = [], news = 
                             <div className="p-[18px]">
                                 <h3 className="mb-2.5 text-navy-800 font-extrabold text-[1.2rem] leading-[1.2]">{project.title}</h3>
                                 <p className="text-slate-500 leading-[1.65]">{project.client_name}</p>
-                                <span className="block text-slate-400 text-[0.92rem] mt-1">{project.status}</span>
+                                <span className="block text-slate-400 text-[0.92rem] mt-1">{t[`status_${project.status}`] ?? project.status}</span>
                             </div>
                         </Link>
                     ))}
