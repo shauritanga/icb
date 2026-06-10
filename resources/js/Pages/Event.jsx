@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowLeft, CalendarDays, ExternalLink, MapPin } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 function MetaRow({ icon: Icon, label, value, href }) {
     if (!value) return null;
@@ -29,10 +30,11 @@ export default function Event({ event, settings = {}, locale = 'en' }) {
     const images = event.images?.length ? event.images : event.image ? [event.image] : [];
     const [activeIdx, setActiveIdx] = useState(0);
     const activeImage = images[activeIdx] ?? null;
+    const t = useT();
 
     return (
         <Layout settings={settings} locale={locale}>
-            <PageHero eyebrow="Bureau events" title={event.title}>
+            <PageHero eyebrow={t.event_eyebrow ?? 'Bureau events'} title={event.title}>
                 {event.event_date}
             </PageHero>
 
@@ -73,7 +75,7 @@ export default function Event({ event, settings = {}, locale = 'en' }) {
                         {event.description && (
                             <div className="bg-white rounded-xl border border-border-light shadow-card overflow-hidden">
                                 <div className="px-6 py-4 border-b border-border-light">
-                                    <h2 className="text-navy-800 text-[0.95rem] font-extrabold tracking-tight uppercase">About this event</h2>
+                                    <h2 className="text-navy-800 text-[0.95rem] font-extrabold tracking-tight uppercase">{t.event_about ?? 'About this event'}</h2>
                                 </div>
                                 <div
                                     className="px-6 py-6 prose prose-slate max-w-none text-slate-700 leading-[1.82] text-[0.95rem]
@@ -91,14 +93,14 @@ export default function Event({ event, settings = {}, locale = 'en' }) {
                     <aside className="sticky top-[96px] flex flex-col gap-4">
                         <div className="bg-white rounded-xl border border-border-light shadow-card overflow-hidden">
                             <div className="px-5 py-3.5 bg-navy-800">
-                                <h3 className="text-white font-extrabold text-[0.72rem] uppercase tracking-[0.1em]">Event Details</h3>
+                                <h3 className="text-white font-extrabold text-[0.72rem] uppercase tracking-[0.1em]">{t.event_details_header ?? 'Event Details'}</h3>
                             </div>
                             <div className="px-5">
-                                <MetaRow icon={CalendarDays} label="Date & Time"     value={event.event_date} />
+                                <MetaRow icon={CalendarDays} label={t.event_date_time ?? 'Date & Time'}     value={event.event_date} />
                                 {event.event_end_date && event.event_end_date !== event.event_date && (
-                                    <MetaRow icon={CalendarDays} label="Ends"         value={event.event_end_date} />
+                                    <MetaRow icon={CalendarDays} label={t.event_ends ?? 'Ends'}         value={event.event_end_date} />
                                 )}
-                                <MetaRow icon={MapPin}      label="Location"      value={event.location} />
+                                <MetaRow icon={MapPin}      label={t.event_location ?? 'Location'}      value={event.location} />
                             </div>
                         </div>
 
@@ -109,7 +111,7 @@ export default function Event({ event, settings = {}, locale = 'en' }) {
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-gold-400 hover:bg-gold-500 text-navy-900 font-extrabold transition-colors text-sm"
                             >
-                                Register for this event <ExternalLink size={14} />
+                                {t.event_register ?? 'Register for this event'} <ExternalLink size={14} />
                             </a>
                         )}
 
@@ -118,7 +120,7 @@ export default function Event({ event, settings = {}, locale = 'en' }) {
                             className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-border-light bg-white hover:bg-brand-sky text-navy-700 font-bold transition-colors text-sm"
                         >
                             <ArrowLeft size={14} />
-                            All Events
+                            {t.event_all ?? 'All Events'}
                         </Link>
                     </aside>
                 </div>

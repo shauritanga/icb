@@ -37,7 +37,22 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            //
+            'locale' => fn () => app()->getLocale(),
+            't'      => fn () => $this->uiTranslations(),
         ];
+    }
+
+    private function uiTranslations(): array
+    {
+        $locale = app()->getLocale();
+        $path   = resource_path("lang/{$locale}.json");
+
+        if (! file_exists($path)) {
+            $path = resource_path('lang/en.json');
+        }
+
+        $content = file_get_contents($path);
+
+        return $content ? (json_decode($content, true) ?? []) : [];
     }
 }

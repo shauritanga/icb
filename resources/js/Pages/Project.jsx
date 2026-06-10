@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowLeft, Building2, Calendar, CircleDot, DollarSign } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 const STATUS_CONFIG = {
     ongoing:   { dot: 'bg-blue-500',  pill: 'bg-blue-50  text-blue-800  border-blue-200'  },
@@ -42,11 +43,12 @@ export default function Project({ project, settings = {}, locale = 'en' }) {
         : project.image ? [project.image] : [];
     const [activeIdx, setActiveIdx] = useState(0);
     const activeImage = images[activeIdx] ?? null;
+    const t = useT();
 
     return (
         <Layout settings={settings} locale={locale}>
             {/* ── Standard hero ───────────────────────────── */}
-            <PageHero eyebrow="Project" title={project.title}>
+            <PageHero eyebrow={t.project_eyebrow ?? 'Project'} title={project.title}>
                 {project.client_name}
             </PageHero>
 
@@ -96,7 +98,7 @@ export default function Project({ project, settings = {}, locale = 'en' }) {
                         {/* Description */}
                         <div className="bg-white rounded-xl border border-border-light shadow-card overflow-hidden">
                             <div className="px-6 py-4 border-b border-border-light">
-                                <h2 className="text-navy-800 text-[0.95rem] font-extrabold tracking-tight uppercase">Project Overview</h2>
+                                <h2 className="text-navy-800 text-[0.95rem] font-extrabold tracking-tight uppercase">{t.project_overview ?? 'Project Overview'}</h2>
                             </div>
                             <div
                                 className="px-6 py-6 prose prose-slate max-w-none text-slate-700 leading-[1.82] text-[0.95rem]
@@ -117,19 +119,19 @@ export default function Project({ project, settings = {}, locale = 'en' }) {
                         {/* Details card */}
                         <div className="bg-white rounded-xl border border-border-light shadow-card overflow-hidden">
                             <div className="px-5 py-3.5 bg-navy-800">
-                                <h3 className="text-white font-extrabold text-[0.72rem] uppercase tracking-[0.1em]">Project Details</h3>
+                                <h3 className="text-white font-extrabold text-[0.72rem] uppercase tracking-[0.1em]">{t.project_details_header ?? 'Project Details'}</h3>
                             </div>
                             <div className="px-5">
-                                <MetaRow icon={Building2}  label="Client"         value={project.client_name} />
-                                <MetaRow icon={DollarSign} label="Contract Value" value={project.contract_value} />
-                                <MetaRow icon={Calendar}   label="Project Period" value={project.project_period} />
+                                <MetaRow icon={Building2}  label={t.project_client ?? 'Client'}         value={project.client_name} />
+                                <MetaRow icon={DollarSign} label={t.project_contract_value ?? 'Contract Value'} value={project.contract_value} />
+                                <MetaRow icon={Calendar}   label={t.project_period ?? 'Project Period'} value={project.project_period} />
                                 {project.status && (
                                     <div className="flex items-start gap-3 py-3.5">
                                         <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-md bg-brand-sky flex items-center justify-center">
                                             <CircleDot size={13} className="text-navy-600" />
                                         </div>
                                         <div>
-                                            <p className="text-[0.65rem] font-bold uppercase tracking-[0.09em] text-slate-400 mb-1.5">Status</p>
+                                            <p className="text-[0.65rem] font-bold uppercase tracking-[0.09em] text-slate-400 mb-1.5">{t.project_status ?? 'Status'}</p>
                                             <StatusBadge status={project.status} />
                                         </div>
                                     </div>
@@ -140,7 +142,7 @@ export default function Project({ project, settings = {}, locale = 'en' }) {
                         {/* Image counter */}
                         {images.length > 1 && (
                             <div className="bg-white rounded-xl border border-border-light shadow-card px-5 py-3.5 flex items-center justify-between">
-                                <span className="text-[0.75rem] font-bold text-slate-500 uppercase tracking-wider">Gallery</span>
+                                <span className="text-[0.75rem] font-bold text-slate-500 uppercase tracking-wider">{t.project_gallery ?? 'Gallery'}</span>
                                 <span className="text-[0.75rem] font-extrabold text-navy-700 bg-brand-sky px-2 py-0.5 rounded-full">
                                     {activeIdx + 1} / {images.length}
                                 </span>
@@ -153,7 +155,7 @@ export default function Project({ project, settings = {}, locale = 'en' }) {
                             className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-border-light bg-white hover:bg-brand-sky text-navy-700 font-bold transition-colors text-sm"
                         >
                             <ArrowLeft size={14} />
-                            All Projects
+                            {t.projects_all ?? 'All Projects'}
                         </Link>
                     </aside>
 

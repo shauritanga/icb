@@ -1,15 +1,16 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Mail, Menu, Phone, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../hooks/useT';
 
-const nav = [
-    ['About', '/about'],
-    ['Services', '/services'],
-    ['Projects', '/projects'],
-    ['Staff', '/staff'],
-    ['News', '/news'],
-    ['Events', '/events'],
-    ['Contact', '/contact'],
+const navKeys = [
+    ['nav_about',    'About',    '/about'],
+    ['nav_services', 'Services', '/services'],
+    ['nav_projects', 'Projects', '/projects'],
+    ['nav_staff',    'Staff',    '/staff'],
+    ['nav_news',     'News',     '/news'],
+    ['nav_events',   'Events',   '/events'],
+    ['nav_contact',  'Contact',  '/contact'],
 ];
 
 export default function Layout({ children, settings = {}, locale = 'en' }) {
@@ -17,6 +18,7 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
     const [scrolled, setScrolled] = useState(false);
     const mainRef = useRef(null);
     const { url } = usePage();
+    const t = useT();
     const currentPath = (url || '/').split('?')[0].replace(/\/$/, '') || '/';
 
     const isActive = (href) => {
@@ -85,7 +87,7 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-[18px] text-[#233244] font-semibold text-[0.94rem]">
-                        {nav.map(([label, href]) => {
+                        {navKeys.map(([key, fallback, href]) => {
                             const active = isActive(href);
 
                             return (
@@ -95,14 +97,14 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
                                     className={`desktop-nav-link relative whitespace-nowrap transition-colors duration-[180ms] hover:text-navy-600 ${active ? 'text-navy-600 after:!w-full' : ''}`}
                                     aria-current={active ? 'page' : undefined}
                                 >
-                                    {label}
+                                    {t[key] ?? fallback}
                                 </Link>
                             );
                         })}
                         <a
                             className="px-[14px] py-2.5 bg-gold-400 text-navy-900 rounded-md font-extrabold transition-[background,transform] duration-[180ms] hover:bg-gold-500 hover:-translate-y-px"
                             href="/admin" target="_blank" rel="noreferrer"
-                        >Admin</a>
+                        >{t.nav_admin ?? 'Admin'}</a>
                     </nav>
 
                     <button
@@ -117,7 +119,7 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
 
                 {/* Mobile nav */}
                 <nav className={`mobile-nav${open ? ' open' : ''}`}>
-                    {nav.map(([label, href]) => {
+                    {navKeys.map(([key, fallback, href]) => {
                         const active = isActive(href);
 
                         return (
@@ -128,11 +130,11 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
                                 className={`px-3 py-3 rounded-md font-semibold transition-colors ${active ? 'bg-brand-sky text-navy-700' : 'hover:bg-blue-50'}`}
                                 aria-current={active ? 'page' : undefined}
                             >
-                                {label}
+                                {t[key] ?? fallback}
                             </Link>
                         );
                     })}
-                    <a href="/admin" target="_blank" rel="noreferrer" className="px-3 py-3 rounded-md font-semibold hover:bg-blue-50 transition-colors">Admin</a>
+                    <a href="/admin" target="_blank" rel="noreferrer" className="px-3 py-3 rounded-md font-semibold hover:bg-blue-50 transition-colors">{t.nav_admin ?? 'Admin'}</a>
                 </nav>
             </header>
 
@@ -146,7 +148,7 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
                             <img src="/logo.png" alt="DIT ICB logo" className="w-9 h-9 object-contain bg-white rounded-md p-0.5" />
                             DIT ICB
                         </div>
-                        <p className="text-[#b8cbe0] leading-[1.65]">Professional consulting and training bureau delivering engineering, ICT, environmental, and project advisory services.</p>
+                        <p className="text-[#b8cbe0] leading-[1.65]">{t.footer_description ?? 'Professional consulting and training bureau delivering engineering, ICT, environmental, and project advisory services.'}</p>
                         {/* Social links — only rendered when set in CMS Settings */}
                         {(settings.facebook || settings.twitter || settings.linkedin || settings.instagram || settings.youtube) && (
                             <div className="flex items-center gap-3 mt-4">
@@ -184,21 +186,21 @@ export default function Layout({ children, settings = {}, locale = 'en' }) {
                         )}
                     </div>
                     <div>
-                        <h3 className="text-white font-bold mb-3">Contact</h3>
+                        <h3 className="text-white font-bold mb-3">{t.footer_contact ?? 'Contact'}</h3>
                         <p className="text-[#b8cbe0] leading-[1.65]">{settings.address}</p>
                         <p className="text-[#b8cbe0] leading-[1.65]">{settings.phone}</p>
                         <p className="text-[#b8cbe0] leading-[1.65]">{settings.email}</p>
                     </div>
                     <div>
-                        <h3 className="text-white font-bold mb-3">Quick links</h3>
-                        <Link href="/services" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">Services</Link>
-                        <Link href="/projects" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">Projects</Link>
-                        <Link href="/events" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">Events</Link>
-                        <Link href="/contact" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">Contact</Link>
+                        <h3 className="text-white font-bold mb-3">{t.footer_quick_links ?? 'Quick links'}</h3>
+                        <Link href="/services" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">{t.nav_services ?? 'Services'}</Link>
+                        <Link href="/projects" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">{t.nav_projects ?? 'Projects'}</Link>
+                        <Link href="/events" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">{t.nav_events ?? 'Events'}</Link>
+                        <Link href="/contact" className="block text-blue-200 my-2 transition-colors duration-150 hover:text-gold-400">{t.nav_contact ?? 'Contact'}</Link>
                     </div>
                 </div>
                 <div className="max-w-[1180px] mx-auto px-4 mt-8 pt-6 border-t border-white/10 text-[0.8rem] text-[#6b8aad]">
-                    © {new Date().getFullYear()} DIT Institute Consultancy Bureau. All rights reserved.
+                    © {new Date().getFullYear()} {t.footer_copyright ?? 'DIT Institute Consultancy Bureau. All rights reserved.'}
                 </div>
             </footer>
         </div>

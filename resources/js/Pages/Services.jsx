@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 const ICON_MAP = {
     Building2,
@@ -27,11 +28,12 @@ function ServiceIcon({ name, size = 22 }) {
 
 export default function Services({ services = [], settings = {}, locale = 'en' }) {
     const plainText = (html = '') => html.replace(/<[^>]*>/g, '').trim();
+    const t = useT();
 
     return (
         <Layout settings={settings} locale={locale}>
-            <PageHero eyebrow="Consultancy services" title="Integrated professional services">
-                Engineering, design, project management, ICT, laboratory, and environmental services delivered by DIT ICB specialists.
+            <PageHero eyebrow={t.services_eyebrow ?? 'Consultancy services'} title={t.services_title ?? 'Integrated professional services'}>
+                {t.services_description ?? 'Engineering, design, project management, ICT, laboratory, and environmental services delivered by DIT ICB specialists.'}
             </PageHero>
             <section className="py-[clamp(54px,7vw,88px)]">
                 <div className="max-w-[1180px] mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">

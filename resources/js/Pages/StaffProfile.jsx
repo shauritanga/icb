@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowLeft, Award, Briefcase, GraduationCap, UserRound } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 function DetailRow({ icon: Icon, label, value }) {
     if (!value) return null;
@@ -19,10 +20,11 @@ function DetailRow({ icon: Icon, label, value }) {
 }
 
 export default function StaffProfile({ member, settings = {}, locale = 'en' }) {
+    const t = useT();
     return (
         <Layout settings={settings} locale={locale}>
 
-            <PageHero eyebrow="Bureau team" title={member.name}>
+            <PageHero eyebrow={t.staff_eyebrow ?? 'Bureau team'} title={member.name}>
                 {member.position}
             </PageHero>
 
@@ -51,7 +53,7 @@ export default function StaffProfile({ member, settings = {}, locale = 'en' }) {
                         {member.experience && (
                             <div className="bg-white rounded-xl border border-border-light shadow-card overflow-hidden">
                                 <div className="px-6 py-4 border-b border-border-light">
-                                    <h2 className="text-navy-800 text-[0.95rem] font-extrabold tracking-tight uppercase">Professional Experience</h2>
+                                    <h2 className="text-navy-800 text-[0.95rem] font-extrabold tracking-tight uppercase">{t.staff_experience ?? 'Professional Experience'}</h2>
                                 </div>
                                 <p className="px-6 py-6 text-slate-700 leading-[1.82] text-[0.95rem]">
                                     {member.experience}
@@ -66,12 +68,12 @@ export default function StaffProfile({ member, settings = {}, locale = 'en' }) {
                         {/* Profile details */}
                         <div className="bg-white rounded-xl border border-border-light shadow-card overflow-hidden">
                             <div className="px-5 py-3.5 bg-navy-800">
-                                <h3 className="text-white font-extrabold text-[0.72rem] uppercase tracking-[0.1em]">Profile Details</h3>
+                                <h3 className="text-white font-extrabold text-[0.72rem] uppercase tracking-[0.1em]">{t.staff_profile_header ?? 'Profile Details'}</h3>
                             </div>
                             <div className="px-5">
-                                <DetailRow icon={Briefcase}     label="Position"      value={member.position} />
-                                <DetailRow icon={Award}         label="Profession"    value={member.profession} />
-                                <DetailRow icon={GraduationCap} label="Qualification" value={member.qualification} />
+                                <DetailRow icon={Briefcase}     label={t.staff_position ?? 'Position'}      value={member.position} />
+                                <DetailRow icon={Award}         label={t.staff_profession ?? 'Profession'}    value={member.profession} />
+                                <DetailRow icon={GraduationCap} label={t.staff_qualification ?? 'Qualification'} value={member.qualification} />
                             </div>
                         </div>
 
@@ -81,7 +83,7 @@ export default function StaffProfile({ member, settings = {}, locale = 'en' }) {
                             className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-border-light bg-white hover:bg-brand-sky text-navy-700 font-bold transition-colors text-sm"
                         >
                             <ArrowLeft size={14} />
-                            All Team Members
+                            {t.staff_all ?? 'All Team Members'}
                         </Link>
                     </aside>
 

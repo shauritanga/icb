@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowRight, CalendarDays, MapPin } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero, Pagination } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 function EventCard({ event, delay }) {
     return (
@@ -45,10 +46,11 @@ function EventCard({ event, delay }) {
 }
 
 export default function Events({ events = { data: [], links: [] }, settings = {}, locale = 'en' }) {
+    const t = useT();
     return (
         <Layout settings={settings} locale={locale}>
-            <PageHero eyebrow="Bureau events" title="Events & Workshops">
-                Workshops, training sessions, and public engagements hosted by DIT Institute Consultancy Bureau.
+            <PageHero eyebrow={t.events_eyebrow ?? 'Bureau events'} title={t.events_title ?? 'Events & Workshops'}>
+                {t.events_description ?? 'Workshops, training sessions, and public engagements hosted by DIT Institute Consultancy Bureau.'}
             </PageHero>
 
             <section className="py-[clamp(54px,7vw,88px)] bg-brand-muted bg-dot-pattern">
@@ -68,12 +70,12 @@ export default function Events({ events = { data: [], links: [] }, settings = {}
                                 <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-brand-sky text-navy-600">
                                     <CalendarDays size={23} />
                                 </span>
-                                <h3 className="text-[1.2rem] font-extrabold text-navy-800">No events scheduled</h3>
+                                <h3 className="text-[1.2rem] font-extrabold text-navy-800">{t.events_empty_title ?? 'No events scheduled'}</h3>
                                 <p className="mt-2 text-slate-500 leading-[1.65]">
-                                    Events and workshops will appear here once they are published.
+                                    {t.events_empty_body ?? 'Events and workshops will appear here once they are published.'}
                                 </p>
                                 <Link href="/news" className="inline-flex items-center gap-1.5 mt-5 font-bold text-navy-600 hover:text-navy-800 transition-colors">
-                                    View news & updates <ArrowRight size={15} />
+                                    {t.events_view_news ?? 'View news & updates'} <ArrowRight size={15} />
                                 </Link>
                             </div>
                         </div>

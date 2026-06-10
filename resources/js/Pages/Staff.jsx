@@ -2,12 +2,14 @@ import { Link } from '@inertiajs/react';
 import { UserRound } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 export default function Staff({ staff = [], settings = {}, locale = 'en' }) {
+    const t = useT();
     return (
         <Layout settings={settings} locale={locale}>
-            <PageHero eyebrow="Bureau team" title="Key professionals">
-                Experienced engineering, ICT, architectural, environmental, and quantity surveying professionals.
+            <PageHero eyebrow={t.staff_eyebrow ?? 'Bureau team'} title={t.staff_title ?? 'Key professionals'}>
+                {t.staff_description ?? 'Experienced engineering, ICT, architectural, environmental, and quantity surveying professionals.'}
             </PageHero>
             <section className="py-[clamp(54px,7vw,88px)] bg-brand-muted bg-dot-pattern">
                 <div className="max-w-[1180px] mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">

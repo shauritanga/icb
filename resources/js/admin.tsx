@@ -1442,6 +1442,12 @@ function RecordForm({
                             value={getNested(draft, field.name)}
                             onChange={(v) => setField(field.name, v)}
                         />
+                        {field.name.endsWith('.sw') && (
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                <Globe size={11} />
+                                Auto-translated from English on save. Manual edits are overwritten when English changes.
+                            </span>
+                        )}
                     </label>
                 ))}
             </div>

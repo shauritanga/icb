@@ -1,12 +1,14 @@
 import { Link } from '@inertiajs/react';
 import Layout from '../Components/Layout';
 import { ImageBlock, PageHero, Pagination } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 export default function Projects({ projects = { data: [], links: [] }, settings = {}, locale = 'en' }) {
+    const t = useT();
     return (
         <Layout settings={settings} locale={locale}>
-            <PageHero eyebrow="Selected assignments" title="Projects and investigations">
-                Representative consultancy assignments from geotechnical investigation and detailed design to tender documentation and supervision.
+            <PageHero eyebrow={t.projects_eyebrow ?? 'Selected assignments'} title={t.projects_title ?? 'Projects and investigations'}>
+                {t.projects_description ?? 'Representative consultancy assignments from geotechnical investigation and detailed design to tender documentation and supervision.'}
             </PageHero>
             <section className="py-[clamp(54px,7vw,88px)] bg-brand-muted bg-dot-pattern">
                 <div className="max-w-[1180px] mx-auto px-4">

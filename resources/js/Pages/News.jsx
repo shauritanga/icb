@@ -1,11 +1,13 @@
 import { Link } from '@inertiajs/react';
 import Layout from '../Components/Layout';
 import { PageHero, Pagination } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 export default function News({ posts = { data: [], links: [] }, settings = {}, locale = 'en' }) {
+    const t = useT();
     return (
         <Layout settings={settings} locale={locale}>
-            <PageHero eyebrow="Updates" title="News and announcements" />
+            <PageHero eyebrow={t.news_eyebrow ?? 'Updates'} title={t.news_title ?? 'News and announcements'} />
             <section className="py-[clamp(54px,7vw,88px)]">
                 <div className="max-w-[1180px] mx-auto px-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">

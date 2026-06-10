@@ -1,20 +1,22 @@
 import { FileText, Mail, MapPin, Phone } from 'lucide-react';
 import Layout from '../Components/Layout';
 import { PageHero } from '../Components/UI';
+import { useT } from '../hooks/useT';
 
 export default function Contact({ documents = [], settings = {}, locale = 'en' }) {
+    const t = useT();
     return (
         <Layout settings={settings} locale={locale}>
-            <PageHero eyebrow="Contact" title="Work with DIT Institute Consultancy Bureau">
-                Reach the bureau for consulting, training, technical audits, project design, and supervision enquiries.
+            <PageHero eyebrow={t.contact_eyebrow ?? 'Contact'} title={t.contact_title ?? 'Work with DIT Institute Consultancy Bureau'}>
+                {t.contact_description ?? 'Reach the bureau for consulting, training, technical audits, project design, and supervision enquiries.'}
             </PageHero>
             <section className="py-[clamp(54px,7vw,88px)]">
                 <div className="max-w-[1180px] mx-auto px-4 grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 items-start">
                     <aside className="bg-brand-muted border border-border-light rounded-lg p-6 space-y-5">
                         {[
-                            [MapPin, 'Address', settings.address],
-                            [Phone, 'Phone', settings.phone],
-                            [Mail, 'Email', settings.email],
+                            [MapPin, t.contact_address ?? 'Address', settings.address],
+                            [Phone, t.contact_phone ?? 'Phone', settings.phone],
+                            [Mail, t.contact_email ?? 'Email', settings.email],
                         ].map(([Icon, label, value]) => (
                             <div key={label} className="flex items-start gap-3">
                                 <span className="shrink-0 mt-0.5 text-navy-600"><Icon size={18} /></span>
@@ -26,7 +28,7 @@ export default function Contact({ documents = [], settings = {}, locale = 'en' }
                         ))}
                     </aside>
                     <div className="bg-white border border-border-light rounded-lg shadow-card p-6">
-                        <h2 className="mb-4 text-navy-800 font-extrabold text-[1.2rem]">Documents</h2>
+                        <h2 className="mb-4 text-navy-800 font-extrabold text-[1.2rem]">{t.contact_documents ?? 'Documents'}</h2>
                         {documents.length ? (
                             <div className="space-y-2">
                                 {documents.map((document) => (
@@ -41,7 +43,7 @@ export default function Contact({ documents = [], settings = {}, locale = 'en' }
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-slate-500">No public documents have been uploaded yet.</p>
+                            <p className="text-slate-500">{t.contact_no_documents ?? 'No public documents have been uploaded yet.'}</p>
                         )}
                     </div>
                 </div>

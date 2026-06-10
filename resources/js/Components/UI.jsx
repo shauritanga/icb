@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
+import { useT } from '../hooks/useT';
 
 export function PageHero({ eyebrow, title, children }) {
     return (
@@ -13,7 +14,9 @@ export function PageHero({ eyebrow, title, children }) {
     );
 }
 
-export function SectionHead({ eyebrow, title, href, action = 'View all' }) {
+export function SectionHead({ eyebrow, title, href, action }) {
+    const t = useT();
+    const label = action ?? (t.view_all ?? 'View all');
     return (
         <div className="max-w-[1180px] mx-auto px-4 flex items-end justify-between gap-5 mb-6">
             <div>
@@ -22,7 +25,7 @@ export function SectionHead({ eyebrow, title, href, action = 'View all' }) {
             </div>
             {href && (
                 <Link href={href} className="inline-flex items-center gap-1.5 text-navy-600 font-extrabold whitespace-nowrap transition-[gap,color] duration-[180ms] hover:gap-2.5 hover:text-navy-700">
-                    {action} <ArrowRight size={16} />
+                    {label} <ArrowRight size={16} />
                 </Link>
             )}
         </div>

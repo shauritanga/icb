@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { ChevronRight, Home as HomeIcon } from 'lucide-react';
 import Layout from '../Components/Layout';
+import { useT } from '../hooks/useT';
 
 export default function Post({ post, settings = {}, locale = 'en' }) {
     const images = post.images?.length ? post.images : post.image ? [post.image] : [];
     const [activeIdx, setActiveIdx] = useState(0);
     const activeImage = images[activeIdx] ?? null;
+    const t = useT();
 
     return (
         <Layout settings={settings} locale={locale}>
@@ -16,10 +18,10 @@ export default function Post({ post, settings = {}, locale = 'en' }) {
                     <nav className="mb-8 flex items-center gap-2 overflow-hidden text-sm text-blue-100" aria-label="Breadcrumb">
                         <Link className="inline-flex items-center gap-1.5 font-bold text-gold-400 transition-colors hover:text-white" href="/">
                             <HomeIcon size={15} />
-                            Home
+                            {t.breadcrumb_home ?? 'Home'}
                         </Link>
                         <ChevronRight className="shrink-0 text-blue-200/60" size={15} />
-                        <Link className="font-bold text-gold-400 transition-colors hover:text-white" href="/news">News & Events</Link>
+                        <Link className="font-bold text-gold-400 transition-colors hover:text-white" href="/news">{t.breadcrumb_news ?? 'News & Events'}</Link>
                         <ChevronRight className="shrink-0 text-blue-200/60" size={15} />
                         <span className="truncate text-blue-100" aria-current="page">{post.title}</span>
                     </nav>

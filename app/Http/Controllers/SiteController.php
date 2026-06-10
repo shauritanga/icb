@@ -11,16 +11,13 @@ use App\Models\Project;
 use App\Models\Service;
 use App\Models\SiteSetting;
 use App\Models\StaffMember;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class SiteController extends Controller
 {
-    public function home(Request $request): Response
+    public function home(): Response
     {
-        $this->setLocale($request);
-
         return Inertia::render('Home', [
             'services' => Service::where('is_published', true)->orderBy('sort_order')->get()->map(fn ($s) => $this->service($s)),
             'projects' => Project::where('is_published', true)->where('is_featured', true)->latest()->take(6)->get()->map(fn ($p) => $this->projectData($p)),
@@ -29,14 +26,11 @@ class SiteController extends Controller
             'gallery'  => GalleryItem::where('is_published', true)->orderBy('sort_order')->take(6)->get()->map(fn ($i) => $this->galleryItem($i)),
             'events'   => Event::where('is_published', true)->where('event_date', '>=', now())->orderBy('event_date')->take(3)->get()->map(fn ($e) => $this->eventData($e)),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function page(Request $request, string $slug): Response
+    public function page(string $slug): Response
     {
-        $this->setLocale($request);
-
         $page = Page::where('slug', $slug)->where('is_published', true)->firstOrFail();
 
         return Inertia::render('Page', [
@@ -47,25 +41,19 @@ class SiteController extends Controller
                 'hero_image' => $this->imageUrl($page->hero_image_path),
             ],
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function services(Request $request): Response
+    public function services(): Response
     {
-        $this->setLocale($request);
-
         return Inertia::render('Services', [
             'services' => Service::where('is_published', true)->orderBy('sort_order')->get()->map(fn ($s) => $this->service($s)),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function projects(Request $request): Response
+    public function projects(): Response
     {
-        $this->setLocale($request);
-
         $projects = Project::where('is_published', true)->latest()->paginate(9);
 
         return Inertia::render('Projects', [
@@ -74,51 +62,39 @@ class SiteController extends Controller
                 'links' => $projects->linkCollection(),
             ],
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function project(Request $request, string $slug): Response
+    public function project(string $slug): Response
     {
-        $this->setLocale($request);
-
         $project = Project::where('slug', $slug)->where('is_published', true)->firstOrFail();
 
         return Inertia::render('Project', [
             'project'  => $this->projectData($project),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function staff(Request $request): Response
+    public function staff(): Response
     {
-        $this->setLocale($request);
-
         return Inertia::render('Staff', [
             'staff'    => StaffMember::where('is_published', true)->orderBy('sort_order')->get()->map(fn ($s) => $this->staffMember($s)),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function staffProfile(Request $request, string $slug): Response
+    public function staffProfile(string $slug): Response
     {
-        $this->setLocale($request);
-
         $member = StaffMember::where('slug', $slug)->where('is_published', true)->firstOrFail();
 
         return Inertia::render('StaffProfile', [
             'member'   => $this->staffMember($member),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function news(Request $request): Response
+    public function news(): Response
     {
-        $this->setLocale($request);
-
         $posts = NewsPost::where('is_published', true)->latest('published_at')->paginate(9);
 
         return Inertia::render('News', [
@@ -127,27 +103,21 @@ class SiteController extends Controller
                 'links' => $posts->linkCollection(),
             ],
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function post(Request $request, string $slug): Response
+    public function post(string $slug): Response
     {
-        $this->setLocale($request);
-
         $post = NewsPost::where('slug', $slug)->where('is_published', true)->firstOrFail();
 
         return Inertia::render('Post', [
             'post'     => $this->postData($post),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function events(Request $request): Response
+    public function events(): Response
     {
-        $this->setLocale($request);
-
         $events = Event::where('is_published', true)->orderBy('event_date')->paginate(9);
 
         return Inertia::render('Events', [
@@ -156,27 +126,21 @@ class SiteController extends Controller
                 'links' => $events->linkCollection(),
             ],
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function event(Request $request, string $slug): Response
+    public function event(string $slug): Response
     {
-        $this->setLocale($request);
-
         $event = Event::where('slug', $slug)->where('is_published', true)->firstOrFail();
 
         return Inertia::render('Event', [
             'event'    => $this->eventData($event),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
-    public function contact(Request $request): Response
+    public function contact(): Response
     {
-        $this->setLocale($request);
-
         return Inertia::render('Contact', [
             'documents' => Document::where('is_published', true)->orderBy('sort_order')->get()->map(fn ($d) => [
                 'title'       => $d->localized('title'),
@@ -184,25 +148,12 @@ class SiteController extends Controller
                 'url'         => $this->imageUrl($d->file_path),
             ]),
             'settings' => $this->settings(),
-            'locale'   => app()->getLocale(),
         ]);
     }
 
     // ─────────────────────────────────────────────────────
     // Private helpers
     // ─────────────────────────────────────────────────────
-
-    private function setLocale(Request $request): void
-    {
-        $locale = $request->query('lang', session('locale', 'en'));
-
-        if (! in_array($locale, ['en', 'sw'], true)) {
-            $locale = 'en';
-        }
-
-        session(['locale' => $locale]);
-        app()->setLocale($locale);
-    }
 
     private function settings(): array
     {

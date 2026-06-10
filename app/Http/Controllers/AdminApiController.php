@@ -12,6 +12,7 @@ use App\Models\Service;
 use App\Models\SiteSetting;
 use App\Models\StaffMember;
 use App\Models\User;
+use App\Services\TranslationService;
 use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -180,6 +181,18 @@ class AdminApiController extends Controller
                 ['name' => 'value.sw', 'label' => 'Value SW', 'type' => 'textarea'],
             ],
         ],
+    ];
+
+    /** English field → Swahili field mappings per resource for auto-translation. */
+    private array $translatableFields = [
+        'pages'     => ['title.en' => 'title.sw', 'excerpt.en' => 'excerpt.sw', 'body.en' => 'body.sw', 'meta_title.en' => 'meta_title.sw', 'meta_description.en' => 'meta_description.sw'],
+        'services'  => ['title.en' => 'title.sw', 'summary.en' => 'summary.sw', 'body.en' => 'body.sw'],
+        'projects'  => ['title.en' => 'title.sw', 'description.en' => 'description.sw'],
+        'news'      => ['title.en' => 'title.sw', 'excerpt.en' => 'excerpt.sw', 'body.en' => 'body.sw'],
+        'events'    => ['title.en' => 'title.sw', 'description.en' => 'description.sw'],
+        'staff'     => ['position.en' => 'position.sw'],
+        'gallery'   => ['title.en' => 'title.sw', 'caption.en' => 'caption.sw'],
+        'documents' => ['title.en' => 'title.sw', 'description.en' => 'description.sw'],
     ];
 
     public function login(Request $request): JsonResponse
@@ -444,8 +457,10 @@ class AdminApiController extends Controller
     {
         $config = $this->resource($resource);
         $this->validatePayload($request, $config);
+        $data = $this->payload($request, $config);
+        $data = $this->applyAutoTranslation($resource, $data);
         $model = new $config['model']();
-        $model->fill($this->payload($request, $config));
+        $model->fill($data);
         $model->save();
         $this->logAdminAction($request, 'created', $resource, $model);
 
@@ -457,7 +472,9 @@ class AdminApiController extends Controller
         $config = $this->resource($resource);
         $this->validatePayload($request, $config, $id);
         $model = $config['model']::findOrFail($id);
-        $model->fill($this->payload($request, $config));
+        $data = $this->payload($request, $config);
+        $data = $this->applyAutoTranslation($resource, $data, $model);
+        $model->fill($data);
         $model->save();
         $this->logAdminAction($request, 'updated', $resource, $model);
 
@@ -557,6 +574,44 @@ class AdminApiController extends Controller
             }
 
             data_set($data, $field['name'], $raw);
+        }
+
+        return $data;
+    }
+
+    private function applyAutoTranslation(string $resource, array $data, ?Model $existing = null): array
+    {
+        $map = $this->translatableFields[$resource] ?? [];
+
+        if (empty($map)) {
+            return $data;
+        }
+
+        $toTranslate = [];
+
+        foreach ($map as $enField => $swField) {
+            $newEnValue = data_get($data, $enField);
+
+            if (! is_string($newEnValue) || trim($newEnValue) === '') {
+                continue;
+            }
+
+            $oldEnValue = $existing ? data_get($existing->toArray(), $enField) : null;
+
+            if ($existing !== null && $newEnValue === $oldEnValue) {
+                continue;
+            }
+
+            $toTranslate[$swField] = $newEnValue;
+        }
+
+        if (! empty($toTranslate)) {
+            $translator = app(TranslationService::class);
+            $translations = $translator->translateBatch($toTranslate);
+
+            foreach ($translations as $swField => $translatedValue) {
+                data_set($data, $swField, $translatedValue);
+            }
         }
 
         return $data;
